@@ -1,0 +1,2763 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Manajemen Santri</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <script>
+let allData = [];
+let currentRecordCount = 0;
+
+function saveToLocalStorage() {
+  localStorage.setItem('santriSystemData', JSON.stringify(allData));
+}
+
+function loadFromLocalStorage() {
+  const data = localStorage.getItem('santriSystemData');
+  if (data) {
+    try {
+      allData = JSON.parse(data);
+      currentRecordCount = allData.length;
+    } catch (e) {
+      allData = [];
+      currentRecordCount = 0;
+    }
+  }
+}
+
+const dataHandler = {
+  onDataChanged(data) {
+    allData = data;
+    currentRecordCount = data.length;
+    saveToLocalStorage();
+  }
+};
+
+const dataSdkWrapper = {
+  async init(handler) {
+    window.dataHandler = handler;
+    return { isOk: true, isError: false };
+  },
+  async create(obj) {
+    const item = { ...obj, __backendId: 'local_' + Date.now() + '_' + Math.random() };
+    allData.push(item);
+    currentRecordCount = allData.length;
+    saveToLocalStorage();
+    if (window.dataHandler) {
+      window.dataHandler.onDataChanged([...allData]);
+    }
+    return { isOk: true, isError: false };
+  },
+  async update(obj) {
+    const idx = allData.findIndex(d => d.__backendId === obj.__backendId);
+    if (idx !== -1) {
+      allData[idx] = obj;
+      saveToLocalStorage();
+      if (window.dataHandler) {
+        window.dataHandler.onDataChanged([...allData]);
+      }
+      return { isOk: true, isError: false };
+    }
+    return { isOk: false, isError: true, error: 'Not found' };
+  },
+  async delete(obj) {
+    const idx = allData.findIndex(d => d.__backendId === obj.__backendId);
+    if (idx !== -1) {
+      allData.splice(idx, 1);
+      currentRecordCount = allData.length;
+      saveToLocalStorage();
+      if (window.dataHandler) {
+        window.dataHandler.onDataChanged([...allData]);
+      }
+      return { isOk: true, isError: false };
+    }
+    return { isOk: false, isError: true, error: 'Not found' };
+  }
+};
+
+loadFromLocalStorage();
+
+if (!window.dataSdk) {
+  window.dataSdk = dataSdkWrapper;
+}
+
+// Initialize data handler
+dataSdkWrapper.init(dataHandler);
+
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50:'#f0fdf4',100:'#dcfce7',200:'#bbf7d0',300:'#86efac',400:'#4ade80',500:'#166534',600:'#14532d',700:'#052e16',800:'#022c22',900:'#064e3b' },
+            gold: { 50:'#fffbeb',100:'#fef3c7',200:'#fde68a',300:'#fcd34d',400:'#d4a017',500:'#b8860b',600:'#92400e' },
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body { height: 100%; margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .sidebar-link { transition: all 0.2s; }
+    .sidebar-link:hover, .sidebar-link.active { background: rgba(255,255,255,0.15); }
+    .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .toast { animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s; }
+    @keyframes slideIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
+    @keyframes fadeOut { to{opacity:0} }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #166534; box-shadow: 0 0 0 3px rgba(22,101,52,0.1); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #166534; border-radius: 3px; }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-gray-50">
+  <div id="app" class="h-full w-full overflow-auto"><!-- LOGIN PAGE -->
+   <div id="loginPage" class="h-full w-full flex items-center justify-center p-4" style="background: linear-gradient(135deg, #052e16 0%, #166534 50%, #14532d 100%);">
+    <div class="w-full max-w-md fade-in">
+     <div class="text-center mb-8">
+      <div class="flex items-center justify-center">
+        ,<img src="LOGO SMP.png" width="60" height="60">
+       </svg>
+      </div>
+      <h1 id="loginTitle" class="text-xl font-bold text-white leading-tight">Pondok Pesantren Putri Roudhotu Tahfidzil Qur'an Putri Perak Jombang</h1>
+      <p class="text-green-200 mt-1 text-sm">Sistem Manajemen Santri</p>
+     </div>
+     <div class="bg-white rounded-2xl shadow-2xl p-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">Masuk ke Akun</h2>
+      <form id="loginForm" onsubmit="handleLogin(event)">
+       <div class="mb-4"><label for="loginUser" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+        <div class="relative"><i data-lucide="user" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i> <input id="loginUser" type="text" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm" placeholder="Masukkan username" required>
+        </div>
+       </div>
+       <div class="mb-4"><label for="loginPass" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <div class="relative"><i data-lucide="lock" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i> <input id="loginPass" type="password" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm" placeholder="Masukkan password" required>
+        </div>
+       </div>
+       <div class="mb-6"></div><button type="submit" class="w-full py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg transition">Masuk</button>
+       <p id="loginError" class="text-red-500 text-xs text-center mt-3 hidden">Username atau password salah</p>
+      </form>
+     </div>
+    </div>
+   </div><!-- MAIN DASHBOARD -->
+   <div id="dashboardPage" class="h-full w-full hidden">
+    <div class="flex h-full"><!-- Sidebar -->
+     <aside id="sidebar" class="w-64 bg-gradient-to-b from-primary-700 via-primary-500 to-primary-600 text-white flex-shrink-0 flex flex-col transition-all duration-300 fixed h-full z-30 lg:relative lg:translate-x-0 -translate-x-full">
+      <div class="p-5 border-b border-white/10">
+       <div class="flex items-center gap-3">
+        <div class="center justify-center">
+         <img src="LOGO SMP.png" width="40" height="40">
+        </div>
+        <div>
+         <h2 id="sidebarTitle" class="font-bold text-xs leading-tight">Pondok Pesantren Putri Roudhotu Tahfidzil Qur'an</h2>
+        </div>
+       </div>
+      </div>
+      <nav id="sidebarNav" class="flex-1 p-3 space-y-1 overflow-y-auto"></nav>
+      <div class="p-4 border-t border-white/10 space-y-2"><button onclick="showTutorialModal()" class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-white/10 transition"> <i data-lucide="book-open" class="w-4 h-4"></i> Tutorial </button> <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-white/10 transition"> <i data-lucide="log-out" class="w-4 h-4"></i> Keluar </button>
+      </div>
+     </aside><!-- Main Content -->
+     <div class="flex-1 flex flex-col min-w-0"><!-- Top Navbar -->
+      <header class="bg-white shadow-sm border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+       <div class="flex items-center gap-3"><button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-gray-100"> <i data-lucide="menu" class="w-5 h-5 text-gray-600"></i> </button>
+        <h1 id="pageTitle" class="text-lg font-bold text-gray-800">Dashboard</h1>
+       </div>
+       <div class="flex items-center gap-3">
+        <div id="notifBadge" class="relative cursor-pointer p-2 rounded-lg hover:bg-gray-100" onclick="showNotifications()"><i data-lucide="bell" class="w-5 h-5 text-gray-600"></i> <span id="notifCount" class="absolute -top-0 -right-0 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
+        </div><button onclick="showTutorialModal()" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600" title="Tampilkan tutorial"><i data-lucide="help-circle" class="w-5 h-5"></i></button>
+        <div class="flex items-center gap-2">
+         <div class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center"><i data-lucide="user" class="w-4 h-4 text-white"></i>
+         </div><span id="userName" class="text-sm font-medium text-gray-700 hidden sm:block">Admin</span>
+        </div>
+       </div>
+      </header><!-- Content Area -->
+      <main id="contentArea" class="flex-1 p-4 lg:p-6 overflow-y-auto"></main>
+     </div>
+    </div>
+   </div><!-- Toast Container -->
+   <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div><!-- Overlay for mobile sidebar -->
+   <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-20 hidden lg:hidden" onclick="toggleSidebar()"></div><!-- Upload Excel Modal -->
+   <div id="uploadExcelModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8">
+     <div class="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between rounded-t-2xl">
+      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i data-lucide="upload" class="w-6 h-6 text-blue-500"></i> Upload Data Santri dari Excel</h2><button onclick="closeUploadExcelModal()" class="p-1 hover:bg-gray-100 rounded"><i data-lucide="x" class="w-5 h-5 text-gray-600"></i></button>
+     </div>
+     <div class="overflow-y-auto max-h-96 p-6 space-y-4"><!-- File Info -->
+      <div id="fileInfo" class="hidden p-4 rounded-lg bg-blue-50 border border-blue-200">
+       <p class="text-sm font-medium text-blue-800">📄 File dipilih: <span id="fileName" class="font-bold"></span></p>
+      </div><!-- Drag & Drop Area -->
+      <div id="dragDropArea" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer transition hover:border-blue-500 hover:bg-blue-50" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)"><i data-lucide="upload-cloud" class="w-12 h-12 text-gray-400 mx-auto mb-3"></i>
+       <p class="text-sm font-medium text-gray-800 mb-1">Drag &amp; drop file Excel di sini</p>
+       <p class="text-xs text-gray-500 mb-4">atau</p><label class="inline-block"><input id="fileInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleFileSelect(event)"> <button type="button" onclick="document.getElementById('fileInput').click()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium">Pilih File</button></label>
+       <p class="text-xs text-gray-400 mt-4">Format: .xlsx, .xls, .csv</p>
+      </div><!-- Progress Section -->
+      <div id="progressSection" class="hidden">
+       <div class="space-y-2">
+        <div class="flex items-center justify-between">
+         <p class="text-sm font-medium text-gray-800">Memproses file...</p><span id="progressPercent" class="text-sm font-bold text-blue-600">0%</span>
+        </div>
+        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+         <div id="progressBar" class="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+        <p id="progressStatus" class="text-xs text-gray-500 text-center">Mempersiapkan...</p>
+       </div>
+      </div><!-- Error Section -->
+      <div id="errorSection" class="hidden">
+       <div class="p-4 rounded-lg bg-red-50 border border-red-200">
+        <p class="text-sm font-bold text-red-800 mb-3">❌ Ditemukan Kesalahan:</p>
+        <div id="errorList" class="space-y-2 max-h-40 overflow-y-auto"></div>
+       </div>
+      </div><!-- Preview Section -->
+      <div id="previewSection" class="hidden">
+       <div class="p-4 rounded-lg bg-green-50 border border-green-200 mb-3">
+        <p class="text-sm font-medium text-green-800">✅ <span id="successCount">0</span> data valid siap disimpan</p>
+       </div>
+       <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <table class="w-full text-sm">
+         <thead class="bg-gray-100">
+          <tr>
+           <th class="px-3 py-2 text-left font-medium text-gray-700">No</th>
+           <th class="px-3 py-2 text-left font-medium text-gray-700">Nomor Induk</th>
+           <th class="px-3 py-2 text-left font-medium text-gray-700">Nama</th>
+           <th class="px-3 py-2 text-left font-medium text-gray-700 hidden md:table-cell">Kamar</th>
+           <th class="px-3 py-2 text-left font-medium text-gray-700 hidden md:table-cell">Kelas</th>
+          </tr>
+         </thead>
+         <tbody id="previewBody"></tbody>
+        </table>
+       </div>
+      </div>
+     </div>
+     <div class="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl flex gap-3 justify-end"><button onclick="closeUploadExcelModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium">Batal</button><button id="saveDataBtn" onclick="saveUploadedData()" class="hidden px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Simpan Data</button>
+     </div>
+    </div>
+   </div><!-- Tutorial Modal -->
+   <div id="tutorialModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8">
+     <div class="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between rounded-t-2xl">
+      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i data-lucide="book-open" class="w-6 h-6 text-primary-500"></i> Tutorial Penggunaan Aplikasi</h2><button onclick="closeTutorialModal()" class="p-1 hover:bg-gray-100 rounded"><i data-lucide="x" class="w-5 h-5 text-gray-600"></i></button>
+     </div>
+     <div class="overflow-y-auto max-h-96 p-6 space-y-6"><!-- Admin Tutorial -->
+      <div id="tutorialAdmin" class="space-y-4">
+       <h3 class="font-bold text-lg text-primary-600">📊 Panduan Admin</h3>
+       <div class="space-y-3">
+        <div class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">1. Dashboard Admin</p>
+         <p class="text-xs text-gray-700">Melihat ringkasan data santri, guru, dan status pembayaran SPP. Semua statistik penting ditampilkan dalam satu layar.</p>
+        </div>
+        <div class="p-3 bg-green-50 border-l-4 border-green-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">2. Kelola Data Santri</p>
+         <p class="text-xs text-gray-700">Tambah, edit, atau hapus data santri. Setiap santri memiliki nomor induk unik, username dan password untuk login.</p>
+        </div>
+        <div class="p-3 bg-purple-50 border-l-4 border-purple-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">3. Pengaturan Nominal Pembayaran</p>
+         <p class="text-xs text-gray-700">Atur nominal SPP bulanan dan daftar ulang. Nominal yang diset akan berlaku untuk semua santri dan terintegrasi dengan pembayaran mereka.</p>
+        </div>
+        <div class="p-3 bg-orange-50 border-l-4 border-orange-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">4. Kelola Pembayaran</p>
+         <p class="text-xs text-gray-700">Pantau pembayaran SPP bulanan dan daftar ulang setiap santri. Ubah status pembayaran dan hitung kekurangan dengan mudah.</p>
+        </div>
+        <div class="p-3 bg-pink-50 border-l-4 border-pink-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">5. Kelola Data Guru</p>
+         <p class="text-xs text-gray-700">Tambah guru, atur santri yang diampu, dan kelola akun login guru di sistem.</p>
+        </div>
+       </div>
+      </div><!-- Guru Tutorial -->
+      <div id="tutorialGuru" class="space-y-4 hidden">
+       <h3 class="font-bold text-lg text-primary-600">👩‍🏫 Panduan Guru/Musyrifah</h3>
+       <div class="space-y-3">
+        <div class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">1. Dashboard Guru</p>
+         <p class="text-xs text-gray-700">Lihat jumlah santri yang Anda ampu dan ringkasan aktivitas absensi hari ini.</p>
+        </div>
+        <div class="p-3 bg-green-50 border-l-4 border-green-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">2. Input Absensi Kegiatan</p>
+         <p class="text-xs text-gray-700">Catat kehadiran santri dalam kegiatan rutin (ziyadah, takror, murojaah, madin, dll). Pilih santri, tanggal, dan checklist kegiatan yang diikuti.</p>
+        </div>
+        <div class="p-3 bg-purple-50 border-l-4 border-purple-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">3. Input Perolehan Hafalan</p>
+         <p class="text-xs text-gray-700">Catat progres hafalan ziyadah dan muroja'ah setiap santri setiap harinya.</p>
+        </div>
+        <div class="p-3 bg-orange-50 border-l-4 border-orange-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">4. Catat Pelanggaran</p>
+         <p class="text-xs text-gray-700">Dokumentasikan setiap pelanggaran santri dengan tanggal dan keterangan lengkap untuk arsip.</p>
+        </div>
+        <div class="p-3 bg-pink-50 border-l-4 border-pink-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">5. Catatan Guru/Musyrifah</p>
+         <p class="text-xs text-gray-700">Tulis catatan perkembangan santri, karakter, atau hal penting lainnya untuk komunikasi dengan wali santri.</p>
+        </div>
+       </div>
+      </div><!-- Santri Tutorial -->
+      <div id="tutorialSantri" class="space-y-4 hidden">
+       <h3 class="font-bold text-lg text-primary-600">👧 Panduan Wali Santri</h3>
+       <div class="space-y-3">
+        <div class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">1. Info Santri</p>
+         <p class="text-xs text-gray-700">Lihat data lengkap santri (nama, kamar, kelas, alamat, orang tua, nomor kontak).</p>
+        </div>
+        <div class="p-3 bg-green-50 border-l-4 border-green-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">2. Cek Pembayaran</p>
+         <p class="text-xs text-gray-700">Monitor status pembayaran SPP bulanan dan daftar ulang. Lihat nominal, jumlah yang sudah dibayar, dan sisanya.</p>
+        </div>
+        <div class="p-3 bg-purple-50 border-l-4 border-purple-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">3. Lihat Absensi</p>
+         <p class="text-xs text-gray-700">Pantau kehadiran santri dalam kegiatan-kegiatan pesantren (dalam 7 hari terakhir).</p>
+        </div>
+        <div class="p-3 bg-orange-50 border-l-4 border-orange-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">4. Perkembangan Hafalan</p>
+         <p class="text-xs text-gray-700">Lihat progres hafalan santri dari catatan guru (ziyadah dan muroja'ah).</p>
+        </div>
+        <div class="p-3 bg-pink-50 border-l-4 border-pink-500 rounded">
+         <p class="font-semibold text-sm text-gray-800 mb-1">5. Catatan &amp; Pelanggaran</p>
+         <p class="text-xs text-gray-700">Baca catatan guru tentang perkembangan santri dan riwayat pelanggaran (jika ada).</p>
+        </div>
+       </div>
+      </div><!-- General Tips -->
+      <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+       <p class="font-semibold text-sm text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="lightbulb" class="w-4 h-4 text-yellow-600"></i> Tips Penting</p>
+       <ul class="text-xs text-gray-700 space-y-1 ml-6">
+        <li>• Pastikan username dan password Anda aman dan tidak dibagikan</li>
+        <li>• Selalu keluar (logout) setelah selesai menggunakan aplikasi</li>
+        <li>• Data disimpan otomatis di sistem, jangan perlu khawatir</li>
+        <li>• Hubungi admin jika ada masalah atau pertanyaan teknis</li>
+       </ul>
+      </div>
+     </div>
+     <div class="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl flex justify-center gap-3">
+      <button onclick="switchTutorialTab('admin')" class="px-4 py-2 text-sm font-medium rounded-lg tutorial-tab-btn bg-primary-500 text-white" data-role="admin">Admin</button> <button onclick="switchTutorialTab('guru')" class="px-4 py-2 text-sm font-medium rounded-lg tutorial-tab-btn hover:bg-gray-200 text-gray-700" data-role="guru">Guru</button> <button onclick="switchTutorialTab('santri')" class="px-4 py-2 text-sm font-medium rounded-lg tutorial-tab-btn hover:bg-gray-200 text-gray-700" data-role="santri">Wali Santri</button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+// ===== STATE =====
+let currentRole = '';
+let currentPage = '';
+
+const defaultConfig = {
+  app_title: 'Pondok Pesantren Roudhotu Tahfidzil Qur\'an Putri Perak Jombang',
+  welcome_text: 'Selamat datang di Sistem Manajemen Santri',
+};
+
+// ===== HELPERS =====
+function showToast(msg, type='success') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast px-4 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${type==='success'?'bg-primary-500':'bg-red-500'}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function getDataByType(type) { return allData.filter(d => d.type === type); }
+
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const o = document.getElementById('sidebarOverlay');
+  s.classList.toggle('-translate-x-full');
+  o.classList.toggle('hidden');
+}
+
+// ===== AUTH WITH ROLE-BASED ACCESS =====
+let currentUserId = null;
+let currentUserData = null;
+
+function handleLogin(e) {
+  e.preventDefault();
+  const user = document.getElementById('loginUser').value;
+  const pass = document.getElementById('loginPass').value;
+  if (!user || !pass) {
+    document.getElementById('loginError').classList.remove('hidden');
+    return;
+  }
+
+  let foundUser = null;
+  let userType = '';
+
+  if (user === 'admin' && pass === 'admin123') {
+    foundUser = {username: 'admin', role: 'admin', __backendId: 'admin'};
+    userType = 'admin';
+    currentUserId = 'admin';
+  } else {
+    let guru = allData.find(d => d.type === 'guru' && d.username === user && d.password === pass);
+    if (guru) {
+      foundUser = guru;
+      userType = 'guru';
+      currentUserId = guru.__backendId;
+    } else {
+      let santri = allData.find(d => d.type === 'santri' && d.username === user && d.password === pass);
+      if (santri) {
+        foundUser = santri;
+        userType = 'santri';
+        currentUserId = santri.nomor_induk;
+      }
+    }
+  }
+
+  if (!foundUser) {
+    document.getElementById('loginError').classList.remove('hidden');
+    return;
+  }
+
+  currentRole = userType;
+  currentUserData = foundUser;
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('dashboardPage').classList.remove('hidden');
+  document.getElementById('userName').textContent = foundUser.nama || foundUser.username;
+  buildSidebar();
+  const firstPage = userType === 'santri' ? 'info-santri' : 'dashboard';
+  navigateTo(firstPage);
+  lucide.createIcons();
+}
+
+function logout() {
+  currentRole = '';
+  document.getElementById('dashboardPage').classList.add('hidden');
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('loginForm').reset();
+  document.getElementById('loginError').classList.add('hidden');
+}
+
+// ===== SIDEBAR =====
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let items = [];
+
+  if (currentRole === 'admin') {
+    items = [
+      {id:'dashboard',icon:'layout-dashboard',label:'Dashboard'},
+      {id:'data-santri',icon:'users',label:'Data Santri'},
+      {id:'pembayaran',icon:'credit-card',label:'Pembayaran'},
+      {id:'data-guru',icon:'graduation-cap',label:'Data Guru'},
+    ];
+  } else if (currentRole === 'guru') {
+    items = [
+      {id:'dashboard',icon:'layout-dashboard',label:'Dashboard Guru'},
+      {id:'absensi',icon:'check-square',label:'Absensi Kegiatan'},
+      {id:'hafalan',icon:'book-open',label:'Perolehan Hafalan'},
+      {id:'pelanggaran',icon:'alert-circle',label:'Pelanggaran'},
+      {id:'catatan',icon:'file-text',label:'Catatan Guru'},
+    ];
+  } else if (currentRole === 'santri') {
+    items = [
+      {id:'info-santri',icon:'user',label:'Info Santri'},
+      {id:'info-absen',icon:'check-square',label:'Absensi'},
+      {id:'info-hafalan',icon:'book-open',label:'Hafalan'},
+      {id:'info-catatan',icon:'file-text',label:'Catatan Perkembangan'},
+      {id:'info-pelanggaran',icon:'alert-circle',label:'Riwayat Pelanggaran'},
+      {id:'info-bayar',icon:'credit-card',label:'Pembayaran'},
+    ];
+  }
+
+  nav.innerHTML = items.map(i => `
+    <button onclick="navigateTo('${i.id}')" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm" data-page="${i.id}">
+      <i data-lucide="${i.icon}" class="w-4 h-4"></i> ${i.label}
+    </button>
+  `).join('');
+  lucide.createIcons();
+}
+
+function navigateTo(page) {
+  currentPage = page;
+  document.querySelectorAll('.sidebar-link').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  document.getElementById('pageTitle').textContent = getPageTitle(page);
+  renderCurrentPage();
+  const s = document.getElementById('sidebar');
+  if (!s.classList.contains('-translate-x-full') && window.innerWidth < 1024) toggleSidebar();
+}
+
+function getPageTitle(page) {
+  const titles = {dashboard:'Dashboard',['data-santri']:'Data Santri',pembayaran:'Pembayaran',['data-guru']:'Data Guru',absensi:'Absensi Kegiatan',hafalan:'Perolehan Hafalan',pelanggaran:'Pelanggaran',catatan:'Catatan Guru',['info-santri']:'Info Santri',['info-bayar']:'Pembayaran',['info-absen']:'Absensi',['info-hafalan']:'Hafalan',['info-catatan']:'Catatan Perkembangan',['info-pelanggaran']:'Riwayat Pelanggaran'};
+  return titles[page] || 'Dashboard';
+}
+
+function renderCurrentPage() {
+  const area = document.getElementById('contentArea');
+  
+  try {
+    if (currentRole === 'admin') {
+      if (currentPage === 'dashboard') renderAdminDashboard(area);
+      else if (currentPage === 'data-santri') renderDataSantri(area);
+      else if (currentPage === 'pembayaran') renderPembayaran(area);
+      else if (currentPage === 'data-guru') renderDataGuru(area);
+    } else if (currentRole === 'guru') {
+      if (currentPage === 'dashboard') renderGuruDashboard(area);
+      else if (currentPage === 'absensi') renderAbsensi(area);
+      else if (currentPage === 'hafalan') renderHafalan(area);
+      else if (currentPage === 'pelanggaran') renderPelanggaran(area);
+      else if (currentPage === 'catatan') renderCatatan(area);
+    } else if (currentRole === 'santri') {
+      if (currentPage === 'info-santri') renderInfoSantri(area);
+      else if (currentPage === 'info-bayar') renderInfoBayar(area);
+      else if (currentPage === 'info-absen') renderInfoAbsen(area);
+      else if (currentPage === 'info-hafalan') renderInfoHafalan(area);
+      else if (currentPage === 'info-catatan') renderInfoCatatan(area);
+      else if (currentPage === 'info-pelanggaran') renderInfoPelanggaran(area);
+    }
+  } catch (err) {
+    console.error('Error rendering page:', err);
+    area.innerHTML = '<div class="p-4 text-red-600 text-center">Terjadi kesalahan. Silakan refresh halaman.</div>';
+  }
+  
+  setTimeout(() => lucide.createIcons(), 100);
+}
+
+function updateNotifications() {
+  const payments = getDataByType('spp').filter(p => p.status_spp === 'belum');
+  const count = payments.length;
+  const badge = document.getElementById('notifCount');
+  if (count > 0) { badge.textContent = count > 9 ? '9+' : count; badge.classList.remove('hidden'); }
+  else badge.classList.add('hidden');
+}
+
+function showNotifications() {
+  const payments = getDataByType('spp').filter(p => p.status_spp === 'belum');
+  if (payments.length === 0) { showToast('Tidak ada notifikasi baru'); return; }
+  showToast(`${payments.length} pembayaran belum lunas`, 'error');
+}
+
+// ===== TUTORIAL FUNCTIONS =====
+function showTutorialModal() {
+  document.getElementById('tutorialModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeTutorialModal() {
+  document.getElementById('tutorialModal').classList.add('hidden');
+}
+
+function switchTutorialTab(role) {
+  document.getElementById('tutorialAdmin').classList.add('hidden');
+  document.getElementById('tutorialGuru').classList.add('hidden');
+  document.getElementById('tutorialSantri').classList.add('hidden');
+  
+  document.querySelectorAll('.tutorial-tab-btn').forEach(btn => {
+    btn.classList.remove('bg-primary-500', 'text-white');
+    btn.classList.add('hover:bg-gray-200', 'text-gray-700');
+  });
+  
+  if (role === 'admin') {
+    document.getElementById('tutorialAdmin').classList.remove('hidden');
+  } else if (role === 'guru') {
+    document.getElementById('tutorialGuru').classList.remove('hidden');
+  } else if (role === 'santri') {
+    document.getElementById('tutorialSantri').classList.remove('hidden');
+  }
+  
+  event.target.classList.add('bg-primary-500', 'text-white');
+  event.target.classList.remove('hover:bg-gray-200', 'text-gray-700');
+}
+
+// ===== ADMIN DASHBOARD =====
+function renderAdminDashboard(area) {
+  const santri = getDataByType('santri');
+  const guru = getDataByType('guru');
+  const spp = getDataByType('spp');
+  const lunas = spp.filter(s => s.status_spp === 'lunas').length;
+  const belum = spp.filter(s => s.status_spp === 'belum').length;
+  const config = defaultConfig;
+  const welcome = config.welcome_text || 'Selamat datang';
+  
+  const settings = getDataByType('settings')[0] || {};
+  const nominalDU = settings.nominal_daftar_ulang || 0;
+  const pembayaranDU = getDataByType('pembayaran_du');
+  
+  let duLunas = 0;
+  santri.forEach(s => {
+    const totalDUBayar = pembayaranDU
+      .filter(p => p.nomor_induk === s.nomor_induk)
+      .reduce((sum, p) => sum + (p.jumlah_bayar || 0), 0);
+    if (totalDUBayar >= nominalDU && nominalDU > 0) {
+      duLunas++;
+    }
+  });
+
+  area.innerHTML = `
+    <div class="fade-in space-y-6">
+      <div class="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
+        <h2 class="text-xl font-bold">${welcome}</h2>
+        <p class="text-green-100 mt-1 text-sm">Kelola data pesantren dengan mudah dan efisien</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card-hover bg-white rounded-xl p-5 border border-gray-100">
+          <div class="flex items-center justify-between">
+            <div><p class="text-xs text-gray-500 uppercase font-medium">Total Santri</p><p class="text-2xl font-bold text-gray-800 mt-1">${santri.length}</p></div>
+            <div class="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center"><i data-lucide="users" class="w-5 h-5 text-primary-500"></i></div>
+          </div>
+        </div>
+        <div class="card-hover bg-white rounded-xl p-5 border border-gray-100">
+          <div class="flex items-center justify-between">
+            <div><p class="text-xs text-gray-500 uppercase font-medium">Total Guru</p><p class="text-2xl font-bold text-gray-800 mt-1">${guru.length}</p></div>
+            <div class="w-10 h-10 rounded-lg bg-gold-50 flex items-center justify-center"><i data-lucide="graduation-cap" class="w-5 h-5 text-gold-500"></i></div>
+          </div>
+        </div>
+        <div class="card-hover bg-white rounded-xl p-5 border border-gray-100">
+          <div class="flex items-center justify-between">
+            <div><p class="text-xs text-gray-500 uppercase font-medium">SPP Lunas</p><p class="text-2xl font-bold text-green-600 mt-1">${lunas}</p></div>
+            <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center"><i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i></div>
+          </div>
+        </div>
+        <div class="card-hover bg-white rounded-xl p-5 border border-gray-100">
+          <div class="flex items-center justify-between">
+            <div><p class="text-xs text-gray-500 uppercase font-medium">Daftar Ulang Lunas</p><p class="text-2xl font-bold text-orange-600 mt-1">${duLunas}</p></div>
+            <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center"><i data-lucide="clipboard" class="w-5 h-5 text-orange-500"></i></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl p-5 border border-gray-100">
+          <h3 class="font-bold text-gray-800 mb-4">Statistik Pembayaran</h3>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-gray-600">SPP Lunas</span><span class="font-medium text-green-600">${lunas} / ${santri.length}</span></div>
+              <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-green-500 rounded-full" style="width:${santri.length?Math.round(lunas/santri.length*100):0}%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-gray-600">Daftar Ulang Lunas</span><span class="font-medium text-orange-600">${duLunas} / ${santri.length}</span></div>
+              <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-orange-500 rounded-full" style="width:${santri.length?Math.round(duLunas/santri.length*100):0}%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl p-5 border border-gray-100">
+          <h3 class="font-bold text-gray-800 mb-4">Santri Terbaru</h3>
+          <div class="space-y-2">
+            ${santri.slice(-5).reverse().map(s => `
+              <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-xs font-bold text-primary-600">${(s.nama||'?')[0]}</div>
+                <div><p class="text-sm font-medium text-gray-800">${s.nama||'-'}</p><p class="text-xs text-gray-500">Kamar ${s.kamar||'-'} • Kelas ${s.kelas||'-'}</p></div>
+              </div>
+            `).join('') || '<p class="text-sm text-gray-400 text-center py-4">Belum ada data santri</p>'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== DATA SANTRI =====
+function renderDataSantri(area) {
+  const santri = getDataByType('santri');
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="relative flex-1 max-w-sm">
+          <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+          <input id="searchSantri" type="text" placeholder="Cari santri..." class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm" oninput="filterSantriTable()">
+        </div>
+        <div class="flex gap-2">
+          <select id="filterKelas" class="px-3 py-2 border border-gray-200 rounded-lg text-sm" onchange="filterSantriTable()">
+            <option value="">Semua Kelas</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+          </select>
+          <button onclick="showUploadExcelModal()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition">
+            <i data-lucide="upload" class="w-4 h-4"></i> Upload Excel
+          </button>
+          <button onclick="downloadTemplate()" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition">
+            <i data-lucide="download" class="w-4 h-4"></i> Template
+          </button>
+          <button onclick="showFormSantri()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Tambah
+          </button>
+        </div>
+      </div>
+      <div id="formSantriContainer"></div>
+      <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-left">
+              <tr><th class="px-4 py-3 font-medium text-gray-600">No. Induk</th><th class="px-4 py-3 font-medium text-gray-600">Nama</th><th class="px-4 py-3 font-medium text-gray-600 hidden md:table-cell">Kamar</th><th class="px-4 py-3 font-medium text-gray-600 hidden md:table-cell">Kelas</th><th class="px-4 py-3 font-medium text-gray-600">Aksi</th></tr>
+            </thead>
+            <tbody id="santriTableBody">${renderSantriRows(santri)}</tbody>
+          </table>
+        </div>
+        ${santri.length === 0 ? '<p class="text-center text-gray-400 py-8 text-sm">Belum ada data santri. Klik tombol Tambah untuk memulai.</p>' : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderSantriRows(data) {
+  return data.map(s => `
+    <tr class="border-t border-gray-50 hover:bg-gray-50 santri-row" data-nama="${(s.nama||'').toLowerCase()}" data-kelas="${s.kelas||''}">
+      <td class="px-4 py-3 font-medium">${s.nomor_induk||'-'}</td>
+      <td class="px-4 py-3 cursor-pointer hover:text-primary-600 font-medium" onclick="openEditModal('${s.__backendId}')">${s.nama||'-'}</td>
+      <td class="px-4 py-3 hidden md:table-cell">${s.kamar||'-'}</td>
+      <td class="px-4 py-3 hidden md:table-cell">${s.kelas||'-'}</td>
+      <td class="px-4 py-3"><div class="flex gap-1">
+        <button onclick="openEditModal('${s.__backendId}')" class="p-1.5 rounded hover:bg-blue-50 text-blue-600"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+        <button onclick="confirmDeleteSantri('${s.__backendId}')" class="p-1.5 rounded hover:bg-red-50 text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+function filterSantriTable() {
+  const search = document.getElementById('searchSantri').value.toLowerCase();
+  const kelas = document.getElementById('filterKelas').value;
+  document.querySelectorAll('.santri-row').forEach(row => {
+    const matchName = row.dataset.nama.includes(search);
+    const matchKelas = !kelas || row.dataset.kelas === kelas;
+    row.style.display = matchName && matchKelas ? '' : 'none';
+  });
+}
+
+let editingSantriId = null;
+function showFormSantri(data) {
+  editingSantriId = data ? data.__backendId : null;
+  const c = document.getElementById('formSantriContainer');
+  c.innerHTML = `
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h3 class="font-bold text-gray-800 mb-4">${data ? 'Edit' : 'Tambah'} Santri</h3>
+      <form id="santriForm" onsubmit="saveSantri(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="f_ni">Nomor Induk</label><input id="f_ni" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.nomor_induk||''}" required></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="f_nama">Nama Lengkap</label><input id="f_nama" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.nama||''}" required></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="f_kamar">Kamar</label><input id="f_kamar" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.kamar||''}"></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="f_kelas">Kelas</label><input id="f_kelas" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.kelas||''}"></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="f_alamat">Alamat</label><input id="f_alamat" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.alamat||''}"></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="f_ibu">Nama Ibu</label><input id="f_ibu" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.nama_ibu||''}"></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="f_hp">No. HP</label><input id="f_hp" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.no_hp||''}"></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="f_user">Username</label><input id="f_user" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.username||''}"></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="f_pass">Password</label><input id="f_pass" type="password" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.password||''}"></div>
+        <div class="flex items-end gap-2">
+          <button type="submit" id="saveSantriBtn" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium">Simpan</button>
+          <button type="button" onclick="document.getElementById('formSantriContainer').innerHTML=''" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm">Batal</button>
+        </div>
+      </form>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+async function saveSantri(e) {
+  e.preventDefault();
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai (999)', 'error'); return; }
+  const btn = document.getElementById('saveSantriBtn');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  const obj = {
+    type: 'santri', nomor_induk: document.getElementById('f_ni').value,
+    nama: document.getElementById('f_nama').value, kamar: document.getElementById('f_kamar').value,
+    kelas: document.getElementById('f_kelas').value, alamat: document.getElementById('f_alamat').value,
+    nama_ibu: document.getElementById('f_ibu').value, no_hp: document.getElementById('f_hp').value,
+    username: document.getElementById('f_user').value,
+    password: document.getElementById('f_pass').value
+  };
+  let result;
+  if (editingSantriId) {
+    const existing = allData.find(d => d.__backendId === editingSantriId);
+    result = await window.dataSdk.update({...existing, ...obj});
+  } else {
+    result = await window.dataSdk.create(obj);
+  }
+  btn.disabled = false; btn.textContent = 'Simpan';
+  if (result.isOk) { showToast(editingSantriId ? 'Data diperbarui' : 'Santri ditambahkan'); document.getElementById('formSantriContainer').innerHTML = ''; }
+  else showToast('Gagal menyimpan data', 'error');
+}
+
+function openEditModal(id) {
+  const santri = allData.find(d => d.__backendId === id);
+  if (!santri) return;
+  
+  const modal = document.createElement('div');
+  modal.id = 'editSantriModal';
+  modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 fade-in';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-96 overflow-y-auto">
+      <div class="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+        <h2 class="text-lg font-bold text-gray-800">Edit Data Santri</h2>
+        <button onclick="document.getElementById('editSantriModal').remove()" class="p-1 hover:bg-gray-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="editSantriForm" onsubmit="saveEditSantri(event, '${id}')" class="p-6 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="block text-xs font-medium text-gray-600 mb-1" for="em_ni">Nomor Induk</label><input id="em_ni" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${santri.nomor_induk||''}" required></div>
+          <div><label class="block text-xs font-medium text-gray-600 mb-1" for="em_nama">Nama Lengkap</label><input id="em_nama" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${santri.nama||''}" required></div>
+          <div><label class="block text-xs font-medium text-gray-600 mb-1" for="em_kamar">Kamar</label><input id="em_kamar" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${santri.kamar||''}"></div>
+          <div><label class="block text-xs font-medium text-gray-600 mb-1" for="em_kelas">Kelas</label><input id="em_kelas" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${santri.kelas||''}"></div>
+          <div><label class="block text-xs font-medium text-gray-600 mb-1" for="em_alamat">Alamat</label><input id="em_alamat" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${santri.alamat||''}"></div>
+          <div><label class="block text-xs font-medium text-gray-600 mb-1" for="em_ibu">Nama Ibu</label><input id="em_ibu" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${santri.nama_ibu||''}"></div>
+          <div><label class="block text-xs font-medium text-gray-600 mb-1" for="em_hp">No. HP</label><input id="em_hp" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${santri.no_hp||''}"></div>
+          <div><label class="block text-xs font-medium text-gray-600 mb-1" for="em_user">Username</label><input id="em_user" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${santri.username||''}"></div>
+          <div><label class="block text-xs font-medium text-gray-600 mb-1" for="em_pass">Password</label><input id="em_pass" type="password" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${santri.password||''}"></div>
+        </div>
+        <div class="flex items-center gap-2 pt-2 border-t justify-end">
+          <button type="button" onclick="document.getElementById('editSantriModal').remove()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium">Batal</button>
+          <button type="submit" id="modalSaveBtn" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  document.getElementById('app').appendChild(modal);
+  lucide.createIcons();
+}
+
+async function saveEditSantri(e, id) {
+  e.preventDefault();
+  const btn = document.getElementById('modalSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  
+  const existing = allData.find(d => d.__backendId === id);
+  if (!existing) return;
+  
+  const obj = {
+    type: 'santri',
+    nomor_induk: document.getElementById('em_ni').value,
+    nama: document.getElementById('em_nama').value,
+    kamar: document.getElementById('em_kamar').value,
+    kelas: document.getElementById('em_kelas').value,
+    alamat: document.getElementById('em_alamat').value,
+    nama_ibu: document.getElementById('em_ibu').value,
+    no_hp: document.getElementById('em_hp').value,
+    username: document.getElementById('em_user').value,
+    password: document.getElementById('em_pass').value
+  };
+  
+  const result = await window.dataSdk.update({...existing, ...obj});
+  
+  btn.disabled = false;
+  btn.textContent = 'Simpan Perubahan';
+  
+  if (result.isOk) {
+    showToast('Data santri berhasil diperbarui');
+    document.getElementById('editSantriModal').remove();
+  } else {
+    showToast('Gagal menyimpan data', 'error');
+  }
+}
+
+let deleteConfirmId = null;
+function confirmDeleteSantri(id) {
+  deleteConfirmId = id;
+  const row = event.target.closest('tr');
+  const cell = row.querySelector('td:last-child');
+  cell.innerHTML = `<div class="flex gap-1"><button onclick="doDeleteSantri()" class="px-2 py-1 bg-red-500 text-white rounded text-xs">Hapus?</button><button onclick="renderCurrentPage()" class="px-2 py-1 bg-gray-200 rounded text-xs">Batal</button></div>`;
+}
+
+async function doDeleteSantri() {
+  const item = allData.find(d => d.__backendId === deleteConfirmId);
+  if (!item) return;
+  
+  const result = await window.dataSdk.delete(item);
+  if (result.isOk) {
+    showToast('Data dihapus');
+    renderCurrentPage();
+  } else {
+    showToast('Gagal menghapus', 'error');
+  }
+}
+
+// ===== UPLOAD EXCEL FUNCTIONS =====
+let uploadedDataForPreview = [];
+let validationErrors = [];
+
+function showUploadExcelModal() {
+  document.getElementById('uploadExcelModal').classList.remove('hidden');
+  resetUploadModal();
+  lucide.createIcons();
+}
+
+function closeUploadExcelModal() {
+  document.getElementById('uploadExcelModal').classList.add('hidden');
+  resetUploadModal();
+}
+
+function resetUploadModal() {
+  uploadedDataForPreview = [];
+  validationErrors = [];
+  document.getElementById('fileInput').value = '';
+  document.getElementById('dragDropArea').classList.remove('border-blue-500', 'bg-blue-50');
+  document.getElementById('dragDropArea').classList.add('border-gray-300');
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('progressSection').classList.add('hidden');
+  document.getElementById('errorSection').classList.add('hidden');
+  document.getElementById('previewSection').classList.add('hidden');
+  document.getElementById('saveDataBtn').classList.add('hidden');
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const area = document.getElementById('dragDropArea');
+  area.classList.remove('border-gray-300');
+  area.classList.add('border-blue-500', 'bg-blue-50');
+}
+
+function handleDragLeave(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const area = document.getElementById('dragDropArea');
+  area.classList.remove('border-blue-500', 'bg-blue-50');
+  area.classList.add('border-gray-300');
+}
+
+function handleFileDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const area = document.getElementById('dragDropArea');
+  area.classList.remove('border-blue-500', 'bg-blue-50');
+  area.classList.add('border-gray-300');
+  
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    handleFileSelect({ target: { files } });
+  }
+}
+
+function handleFileSelect(e) {
+  const files = e.target.files;
+  if (files.length === 0) return;
+  
+  const file = files[0];
+  const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'];
+  
+  if (!validTypes.includes(file.type) && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
+    showToast('Format file tidak didukung. Gunakan .xlsx atau .csv', 'error');
+    return;
+  }
+  
+  document.getElementById('fileInfo').classList.remove('hidden');
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('dragDropArea').classList.add('border-blue-500', 'bg-blue-50');
+  document.getElementById('progressSection').classList.remove('hidden');
+  
+  setTimeout(() => {
+    processExcelFile(file);
+  }, 300);
+}
+
+function processExcelFile(file) {
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    try {
+      updateProgress(50, 'Membaca file...');
+      
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      
+      updateProgress(70, 'Memvalidasi data...');
+      
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      
+      if (jsonData.length === 0) {
+        showToast('File Excel kosong', 'error');
+        return;
+      }
+      
+      validateExcelData(jsonData);
+      
+      updateProgress(100, 'Selesai!');
+      
+      setTimeout(() => {
+        document.getElementById('progressSection').classList.add('hidden');
+        showPreview();
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error processing file:', error);
+      showToast('Gagal membaca file Excel: ' + error.message, 'error');
+      document.getElementById('progressSection').classList.add('hidden');
+    }
+  };
+  
+  reader.readAsArrayBuffer(file);
+}
+
+function updateProgress(percent, status) {
+  document.getElementById('progressPercent').textContent = percent + '%';
+  document.getElementById('progressBar').style.width = percent + '%';
+  document.getElementById('progressStatus').textContent = status;
+}
+
+function validateExcelData(jsonData) {
+  uploadedDataForPreview = [];
+  validationErrors = [];
+  
+  const requiredColumns = ['nomor_induk', 'nama', 'kamar', 'kelas', 'alamat', 'nama_ibu', 'username', 'password'];
+  const existingNomorInduk = new Set(getDataByType('santri').map(s => s.nomor_induk));
+  const existingUsername = new Set(getDataByType('santri').map(s => s.username));
+  
+  let rowNum = 2;
+  
+  jsonData.forEach((row, idx) => {
+    const errors = [];
+    
+    if (!row.nomor_induk || !String(row.nomor_induk).trim()) {
+      errors.push('Nomor Induk kosong');
+    } else if (existingNomorInduk.has(String(row.nomor_induk).trim())) {
+      errors.push(`Nomor Induk "${row.nomor_induk}" sudah terdaftar`);
+    }
+    
+    if (!row.nama || !String(row.nama).trim()) {
+      errors.push('Nama kosong');
+    }
+    
+    if (!row.username || !String(row.username).trim()) {
+      errors.push('Username kosong');
+    } else if (existingUsername.has(String(row.username).trim())) {
+      errors.push(`Username "${row.username}" sudah terdaftar`);
+    }
+    
+    if (!row.password || !String(row.password).trim()) {
+      errors.push('Password kosong');
+    }
+    
+    if (errors.length > 0) {
+      validationErrors.push({
+        row: rowNum,
+        nama: row.nama || '-',
+        errors
+      });
+    } else {
+      uploadedDataForPreview.push({
+        nomor_induk: String(row.nomor_induk).trim(),
+        nama: String(row.nama).trim(),
+        kamar: String(row.kamar || '').trim(),
+        kelas: String(row.kelas || '').trim(),
+        alamat: String(row.alamat || '').trim(),
+        nama_ibu: String(row.nama_ibu || '').trim(),
+        username: String(row.username).trim(),
+        password: String(row.password).trim()
+      });
+    }
+    
+    rowNum++;
+  });
+}
+
+function showPreview() {
+  const errorSection = document.getElementById('errorSection');
+  if (validationErrors.length === 0) {
+    errorSection.classList.add('hidden');
+  } else {
+    errorSection.classList.remove('hidden');
+    const errorList = document.getElementById('errorList');
+    errorList.innerHTML = validationErrors.map(err => `
+      <div class="p-3 rounded-lg bg-red-50 border border-red-200">
+        <p class="font-medium text-red-800 text-xs mb-1">Baris ${err.row}: ${err.nama}</p>
+        <ul class="text-xs text-red-700 ml-4 space-y-0.5">
+          ${err.errors.map(e => `<li>• ${e}</li>`).join('')}
+        </ul>
+      </div>
+    `).join('');
+  }
+  
+  if (uploadedDataForPreview.length > 0) {
+    document.getElementById('previewSection').classList.remove('hidden');
+    document.getElementById('successCount').textContent = uploadedDataForPreview.length;
+    
+    const previewBody = document.getElementById('previewBody');
+    previewBody.innerHTML = uploadedDataForPreview.slice(0, 10).map((d, idx) => `
+      <tr class="border-b border-gray-200 hover:bg-gray-50">
+        <td class="px-3 py-2 text-gray-700">${idx + 1}</td>
+        <td class="px-3 py-2 text-gray-700 font-medium">${d.nomor_induk}</td>
+        <td class="px-3 py-2 text-gray-700">${d.nama}</td>
+        <td class="px-3 py-2 text-gray-700 hidden md:table-cell">${d.kamar || '-'}</td>
+        <td class="px-3 py-2 text-gray-700 hidden md:table-cell">${d.kelas || '-'}</td>
+      </tr>
+    `).join('');
+    
+    if (uploadedDataForPreview.length > 10) {
+      const tbody = document.getElementById('previewBody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="5" class="px-3 py-2 text-center text-xs text-gray-500">... dan ${uploadedDataForPreview.length - 10} data lainnya</td>`;
+      tbody.appendChild(tr);
+    }
+    
+    document.getElementById('saveDataBtn').classList.remove('hidden');
+  } else {
+    document.getElementById('previewSection').classList.add('hidden');
+    document.getElementById('saveDataBtn').classList.add('hidden');
+    if (validationErrors.length === 0) {
+      showToast('Tidak ada data yang valid dalam file', 'error');
+    }
+  }
+}
+
+async function saveUploadedData() {
+  if (uploadedDataForPreview.length === 0) {
+    showToast('Tidak ada data untuk disimpan', 'error');
+    return;
+  }
+  
+  if (currentRecordCount + uploadedDataForPreview.length > 999) {
+    showToast(`Kapasitas database terbatas. Max 999 data`, 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('saveDataBtn');
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  
+  let successCount = 0;
+  let failCount = 0;
+  
+  for (const data of uploadedDataForPreview) {
+    try {
+      const obj = {
+        type: 'santri',
+        ...data
+      };
+      
+      const result = await window.dataSdk.create(obj);
+      if (result.isOk) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch (error) {
+      failCount++;
+    }
+  }
+  
+  btn.disabled = false;
+  btn.textContent = 'Simpan Data';
+  
+  showImportResultNotification(successCount, failCount);
+  
+  setTimeout(() => {
+    closeUploadExcelModal();
+    renderCurrentPage();
+  }, 1500);
+}
+
+function showImportResultNotification(success, fail) {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60] fade-in';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  
+  const icon = fail === 0 ? '✅' : fail > 0 ? '⚠️' : '❌';
+  const title = fail === 0 ? 'Impor Berhasil!' : fail > 0 ? 'Impor Sebagian Berhasil' : 'Impor Gagal';
+  const titleColor = fail === 0 ? 'text-green-800' : fail > 0 ? 'text-yellow-800' : 'text-red-800';
+  const bgColor = fail === 0 ? 'bg-green-50 border-green-200' : fail > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200';
+  
+  const content = document.createElement('div');
+  content.className = `bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 ${bgColor} border`;
+  
+  content.innerHTML = `
+    <div class="text-center">
+      <p class="text-4xl mb-4">${icon}</p>
+      <h3 class="font-bold text-lg ${titleColor} mb-4">${title}</h3>
+      
+      <div class="space-y-2 mb-6">
+        <div class="p-3 rounded-lg bg-green-100 border border-green-200">
+          <p class="text-xs text-green-800"><span class="font-bold">${success}</span> data berhasil disimpan</p>
+        </div>
+        ${fail > 0 ? `
+          <div class="p-3 rounded-lg bg-red-100 border border-red-200">
+            <p class="text-xs text-red-800"><span class="font-bold">${fail}</span> data gagal</p>
+          </div>
+        ` : ''}
+      </div>
+      
+      <p class="text-xs text-gray-500 mb-4">Data santri baru telah ditambahkan ke sistem</p>
+      
+      <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium transition">
+        Tutup
+      </button>
+    </div>
+  `;
+  
+  modal.appendChild(content);
+  document.getElementById('app').appendChild(modal);
+  lucide.createIcons();
+}
+
+function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+  
+  const headers = ['nomor_induk', 'nama', 'kamar', 'kelas', 'alamat', 'nama_ibu', 'username', 'password'];
+  const sampleData = [
+    ['001', 'Ahmad Hidayat', '1A', '1', 'Jl. Merdeka 123, Jombang', 'Siti Nurhaliza', 'ahmad001', 'pass123'],
+    ['002', 'Bilqis Mukaromah', '1B', '1', 'Jl. Sudirman 45, Jombang', 'Susi Rahmawati', 'bilqis002', 'pass123']
+  ];
+  
+  const ws_data = [headers, ...sampleData];
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  
+  const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: 'FFE6E6E6' } }, alignment: { horizontal: 'center' } };
+  headers.forEach((h, idx) => {
+    const cell = ws[XLSX.utils.encode_cell({ r: 0, c: idx })];
+    if (cell) cell.s = headerStyle;
+  });
+  
+  ws['!cols'] = [
+    { wch: 12 },
+    { wch: 20 },
+    { wch: 10 },
+    { wch: 8 },
+    { wch: 25 },
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 12 }
+  ];
+  
+  XLSX.utils.book_append_sheet(wb, ws, 'Data Santri');
+  XLSX.writeFile(wb, 'template_data_santri.xlsx');
+  
+  showToast('Template diunduh. Isi data dan upload kembali', 'success');
+}
+
+// ===== PEMBAYARAN =====
+function renderPembayaran(area) {
+  const santri = getDataByType('santri');
+  const months = ['Juli','Agustus','September','Oktober','November','Desember','Januari','Februari','Maret','April','Mei','Juni'];
+  const settings = getDataByType('settings')[0] || {};
+
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4 text-primary-500"></i> Pengaturan Nominal Pembayaran</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-2" for="nominal_spp_setting">Nominal SPP Bulanan (Rp)</label>
+            <div class="flex gap-2">
+              <div class="relative flex-1">
+                <span class="absolute left-3 top-2 text-gray-400 text-sm">Rp</span>
+                <input id="nominal_spp_setting" type="number" class="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm" value="${settings.nominal_spp || 0}" placeholder="0">
+              </div>
+              <button type="button" onclick="saveSPPNominal()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium">Simpan</button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Nominal ini akan digunakan untuk semua santri</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-2" for="nominal_du_setting">Nominal Daftar Ulang (Rp)</label>
+            <div class="flex gap-2">
+              <div class="relative flex-1">
+                <span class="absolute left-3 top-2 text-gray-400 text-sm">Rp</span>
+                <input id="nominal_du_setting" type="number" class="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm" value="${settings.nominal_daftar_ulang || 0}" placeholder="0">
+              </div>
+              <button type="button" onclick="saveDUNominal()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium">Simpan</button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Nominal ini akan digunakan untuk semua santri</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <h3 class="font-bold text-gray-800 mb-3">Pilih Santri</h3>
+        <div class="flex flex-col sm:flex-row gap-3 items-end">
+          <div class="flex-1 max-w-xs">
+            <label class="block text-xs font-medium text-gray-600 mb-1" for="sppSantri">Nama Santri</label>
+            <select id="sppSantri" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm" onchange="renderSPPDetail()">
+              <option value="">-- Pilih Santri --</option>
+              ${santri.sort((a, b) => (a.nama || '').localeCompare(b.nama || '')).map(s => `<option value="${s.nomor_induk}">${s.nama} (${s.nomor_induk})</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div id="searchResults" class="mt-3 space-y-2"></div>
+      </div>
+
+      <div id="sppDetail"></div>
+      <div id="duDetail"></div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function renderSPPDetail() {
+  const ni = document.getElementById('sppSantri').value;
+  const container = document.getElementById('sppDetail');
+  if (!ni) { container.innerHTML = ''; renderDUDetail(''); return; }
+  const months = ['Juli','Agustus','September','Oktober','November','Desember','Januari','Februari','Maret','April','Mei','Juni'];
+  const settings = getDataByType('settings')[0] || {};
+  const nominalSPP = settings.nominal_spp || 0;
+  
+  const santriData = getDataByType('santri').find(s => s.nomor_induk === ni);
+  const pembayaranSPP = getDataByType('pembayaran_spp').filter(p => p.nomor_induk === ni) || [];
+  const totalSudahBayar = pembayaranSPP.reduce((sum, p) => sum + (p.jumlah_bayar || 0), 0);
+  
+  const totalNominal = months.length * nominalSPP;
+  const totalKekurangan = Math.max(0, totalNominal - totalSudahBayar);
+  
+  const statusBulan = calculateMonthlyStatus(ni, months);
+  const lunasBulan = statusBulan.filter(b => b.status === 'lunas').length;
+  const riwayatPembayaran = pembayaranSPP;
+
+  container.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-primary-500"></i> SPP Bulanan</h3>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 space-y-2">
+          <div class="flex justify-between text-sm"><span class="text-gray-600">Bulan Lunas:</span><span class="font-bold text-primary-600">${lunasBulan}/${months.length} bulan</span></div>
+          <div class="flex justify-between text-sm"><span class="text-gray-600">Total Nominal:</span><span class="font-bold text-gray-800">${formatRupiah(totalNominal)}</span></div>
+          <div class="flex justify-between text-sm"><span class="text-gray-600">Sudah Dibayar:</span><span class="font-bold text-green-600">${formatRupiah(totalSudahBayar)}</span></div>
+          <div class="border-t border-blue-300 pt-2"><div class="flex justify-between text-sm font-bold"><span>Kekurangan:</span><span class="text-red-600">${formatRupiah(totalKekurangan)}</span></div></div>
+        </div>
+        <div class="space-y-2">
+          ${statusBulan.map(b => `
+            <div class="p-3 rounded-lg ${b.status==='lunas'?'bg-green-50 border border-green-200':b.status==='parsial'?'bg-yellow-50 border border-yellow-200':'bg-red-50 border border-red-200'}">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-sm font-medium">${b.bulan}</span>
+                  <p class="text-xs text-gray-500 mt-0.5">Nominal: ${formatRupiah(b.nominal)}</p>
+                </div>
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full">${b.badge}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 text-gold-500"></i> Input Pembayaran SPP</h3>
+        <form onsubmit="savePembayaranSPP(event,'${ni}')" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1" for="spp_bayar">Total Pembayaran Baru (Rp)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-gray-400 text-sm">Rp</span>
+              <input id="spp_bayar" type="number" class="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Masukkan jumlah pembayaran">
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Masukkan pembayaran tambahan (bukan total)</p>
+          </div>
+          <div class="p-3 rounded-lg bg-gray-50 border border-gray-200 space-y-2">
+            <div class="flex justify-between text-sm"><span class="text-gray-600">Total Tagihan (12 bulan):</span><span class="font-bold text-gray-800">${formatRupiah(totalNominal)}</span></div>
+            <div class="flex justify-between text-sm"><span class="text-gray-600">Sudah Terbayar:</span><span class="font-bold text-green-600">${formatRupiah(totalSudahBayar)}</span></div>
+            <div class="border-t border-gray-300 pt-2">
+              <div class="flex justify-between text-sm font-bold">
+                <span>Masih Kurang:</span>
+                <span class="text-red-600">${formatRupiah(totalKekurangan)}</span>
+              </div>
+            </div>
+          </div>
+          <button type="submit" id="sppPayBtn" class="w-full px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium">Simpan Pembayaran</button>
+        </form>
+
+        <hr class="my-4">
+
+        <h3 class="font-bold text-gray-800 mb-3 text-sm flex items-center gap-2"><i data-lucide="history" class="w-4 h-4 text-gold-500"></i> Riwayat Pembayaran</h3>
+        <div class="space-y-2 max-h-48 overflow-y-auto">
+          ${riwayatPembayaran.length > 0 ? riwayatPembayaran.map(r => `
+            <div class="p-2 rounded-lg bg-gray-50 border border-gray-200">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-xs font-medium text-gray-800">${formatRupiah(r.jumlah_bayar || 0)}</p>
+                  <p class="text-xs text-gray-500 mt-0.5">${r.tanggal_bayar || '-'}</p>
+                </div>
+                <button onclick="deleteRiwayatPembayaran('${r.__backendId}')" class="p-1 rounded hover:bg-red-50 text-red-600 text-xs"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+          `).join('') : '<p class="text-xs text-gray-400 text-center py-2">Belum ada pembayaran</p>'}
+        </div>
+      </div>
+    </div>
+  `;
+  renderDUDetail(ni);
+  lucide.createIcons();
+}
+
+function renderDUDetail(ni) {
+  const container = document.getElementById('duDetail');
+  if (!ni) { container.innerHTML = ''; return; }
+  
+  const settings = getDataByType('settings')[0] || {};
+  const nominalDU = settings.nominal_daftar_ulang || 0;
+  
+  const totalDUBayar = getTotalPembayaranDU(ni);
+  const totalDUKekurangan = Math.max(0, nominalDU - totalDUBayar);
+  
+  const riwayatDU = getDataByType('pembayaran_du').filter(p => p.nomor_induk === ni);
+
+  container.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="clipboard" class="w-4 h-4 text-gold-500"></i> Status Daftar Ulang</h3>
+        <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2 mb-4">
+          <div class="flex justify-between text-sm"><span class="text-gray-600">Total Tagihan:</span><span class="font-bold text-gray-800">${formatRupiah(nominalDU)}</span></div>
+          <div class="flex justify-between text-sm"><span class="text-gray-600">Sudah Dibayar:</span><span class="font-bold text-green-600">${formatRupiah(totalDUBayar)}</span></div>
+          <div class="border-t border-orange-300 pt-2"><div class="flex justify-between text-sm font-bold"><span>Kekurangan:</span><span class="text-red-600">${formatRupiah(totalDUKekurangan)}</span></div></div>
+        </div>
+        <div class="p-3 rounded-lg ${totalDUKekurangan === 0 ? 'bg-green-100 border border-green-300' : 'bg-yellow-100 border border-yellow-300'}">
+          <p class="text-sm font-medium ${totalDUKekurangan === 0 ? 'text-green-800' : 'text-yellow-800'}">
+            Status: <span class="font-bold">${totalDUKekurangan === 0 ? '✓ Lunas' : '⏳ Belum Lunas'}</span>
+          </p>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4 text-gold-500"></i> Input Pembayaran DU</h3>
+        <form onsubmit="savePembayaranDU(event,'${ni}')" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1" for="du_bayar">Total Pembayaran Baru (Rp)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-gray-400 text-sm">Rp</span>
+              <input id="du_bayar" type="number" class="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Masukkan jumlah pembayaran">
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Masukkan pembayaran tambahan</p>
+          </div>
+          <div class="p-3 rounded-lg bg-gray-50 border border-gray-200 space-y-2">
+            <div class="flex justify-between text-sm"><span class="text-gray-600">Total Tagihan DU:</span><span class="font-bold text-gray-800">${formatRupiah(nominalDU)}</span></div>
+            <div class="flex justify-between text-sm"><span class="text-gray-600">Sudah Terbayar:</span><span class="font-bold text-green-600">${formatRupiah(totalDUBayar)}</span></div>
+            <div class="border-t border-gray-300 pt-2">
+              <div class="flex justify-between text-sm font-bold">
+                <span>Masih Kurang:</span>
+                <span class="text-red-600">${formatRupiah(totalDUKekurangan)}</span>
+              </div>
+            </div>
+          </div>
+          <button type="submit" id="duPayBtn" class="w-full px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium">Simpan Pembayaran</button>
+        </form>
+
+        <hr class="my-4">
+
+        <h3 class="font-bold text-gray-800 mb-3 text-sm flex items-center gap-2"><i data-lucide="history" class="w-4 h-4 text-gold-500"></i> Riwayat Pembayaran DU</h3>
+        <div class="space-y-2 max-h-48 overflow-y-auto">
+          ${riwayatDU.length > 0 ? riwayatDU.map(r => `
+            <div class="p-2 rounded-lg bg-gray-50 border border-gray-200">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-xs font-medium text-gray-800">${formatRupiah(r.jumlah_bayar || 0)}</p>
+                  <p class="text-xs text-gray-500 mt-0.5">${r.tanggal_bayar || '-'}</p>
+                </div>
+                <button onclick="deleteRiwayatDU('${r.__backendId}')" class="p-1 rounded hover:bg-red-50 text-red-600 text-xs"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+          `).join('') : '<p class="text-xs text-gray-400 text-center py-2">Belum ada pembayaran</p>'}
+        </div>
+      </div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+async function deleteRiwayatPembayaran(id) {
+  const pembayaran = allData.find(d => d.__backendId === id);
+  if (!pembayaran) return;
+  
+  const result = await window.dataSdk.delete(pembayaran);
+  if (result.isOk) {
+    showToast('Riwayat pembayaran dihapus');
+    const ni = document.getElementById('sppSantri').value;
+    renderSPPDetail();
+  } else {
+    showToast('Gagal menghapus riwayat', 'error');
+  }
+}
+
+async function deleteRiwayatDU(id) {
+  const pembayaran = allData.find(d => d.__backendId === id);
+  if (!pembayaran) return;
+  
+  const result = await window.dataSdk.delete(pembayaran);
+  if (result.isOk) {
+    showToast('Riwayat pembayaran DU dihapus');
+    const ni = document.getElementById('sppSantri').value;
+    renderDUDetail(ni);
+  } else {
+    showToast('Gagal menghapus riwayat', 'error');
+  }
+}
+
+function calculateMonthlyStatus(ni, months) {
+  const settings = getDataByType('settings')[0] || {};
+  const nominalSPP = settings.nominal_spp || 0;
+  const totalSudahBayar = getTotalPembayaranSantri(ni);
+  
+  let sisaPembayaran = totalSudahBayar;
+  return months.map((m, idx) => {
+    const bulanNominal = nominalSPP;
+    
+    let status = 'belum';
+    let badge = '🔴 Belum';
+    
+    if (sisaPembayaran >= bulanNominal) {
+      status = 'lunas';
+      badge = '🟢 Lunas';
+      sisaPembayaran -= bulanNominal;
+    } else if (sisaPembayaran > 0) {
+      status = 'parsial';
+      badge = '🟡 Parsial';
+      sisaPembayaran = 0;
+    }
+    
+    return { bulan: m, status, badge, nominal: bulanNominal };
+  });
+}
+
+function getTotalPembayaranSantri(ni) {
+  const pembayaran = getDataByType('pembayaran_spp') || [];
+  return pembayaran
+    .filter(p => p.nomor_induk === ni)
+    .reduce((sum, p) => sum + (p.jumlah_bayar || 0), 0);
+}
+
+function getTotalPembayaranDU(ni) {
+  const pembayaran = getDataByType('pembayaran_du') || [];
+  return pembayaran
+    .filter(p => p.nomor_induk === ni)
+    .reduce((sum, p) => sum + (p.jumlah_bayar || 0), 0);
+}
+
+async function savePembayaranSPP(e, ni) {
+  e.preventDefault();
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai', 'error'); return; }
+  
+  const pembayaran = Number(document.getElementById('spp_bayar').value) || 0;
+  if (pembayaran <= 0) { showToast('Masukkan jumlah pembayaran', 'error'); return; }
+  
+  const btn = document.getElementById('sppPayBtn');
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  
+  const tanggalBayar = new Date().toISOString().split('T')[0];
+  
+  const pembayaranObj = {
+    type: 'pembayaran_spp',
+    nomor_induk: ni,
+    jumlah_bayar: pembayaran,
+    tanggal_bayar: tanggalBayar,
+    keterangan: 'Pembayaran SPP'
+  };
+  
+  const result = await window.dataSdk.create(pembayaranObj);
+  
+  if (result.isOk) {
+    showToast('Pembayaran SPP berhasil disimpan');
+    document.getElementById('spp_bayar').value = '';
+    renderSPPDetail();
+  } else {
+    showToast('Gagal menyimpan pembayaran', 'error');
+  }
+  
+  btn.disabled = false;
+  btn.textContent = 'Simpan Pembayaran';
+}
+
+async function savePembayaranDU(e, ni) {
+  e.preventDefault();
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai', 'error'); return; }
+  
+  const pembayaran = Number(document.getElementById('du_bayar').value) || 0;
+  if (pembayaran <= 0) { showToast('Masukkan jumlah pembayaran', 'error'); return; }
+  
+  const btn = document.getElementById('duPayBtn');
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  
+  const tanggalBayar = new Date().toISOString().split('T')[0];
+  
+  const pembayaranObj = {
+    type: 'pembayaran_du',
+    nomor_induk: ni,
+    jumlah_bayar: pembayaran,
+    tanggal_bayar: tanggalBayar,
+    keterangan: 'Pembayaran Daftar Ulang'
+  };
+  
+  const result = await window.dataSdk.create(pembayaranObj);
+  
+  if (result.isOk) {
+    showToast('Pembayaran Daftar Ulang berhasil disimpan');
+    document.getElementById('du_bayar').value = '';
+    renderDUDetail(ni);
+  } else {
+    showToast('Gagal menyimpan pembayaran', 'error');
+  }
+  
+  btn.disabled = false;
+  btn.textContent = 'Simpan Pembayaran';
+}
+
+async function saveSPPNominal() {
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai', 'error'); return; }
+  const nominal = Number(document.getElementById('nominal_spp_setting').value) || 0;
+  if (nominal <= 0) { showToast('Masukkan nominal yang valid', 'error'); return; }
+  
+  const existing = getDataByType('settings')[0];
+  const obj = {type: 'settings', nominal_spp: nominal, nominal_daftar_ulang: existing?.nominal_daftar_ulang || 0};
+  
+  let result;
+  if (existing) {
+    result = await window.dataSdk.update({...existing, ...obj});
+  } else {
+    result = await window.dataSdk.create(obj);
+  }
+  
+  if (result.isOk) {
+    showToast('Nominal SPP berhasil disimpan');
+  } else {
+    showToast('Gagal menyimpan nominal SPP', 'error');
+  }
+}
+
+async function saveDUNominal() {
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai', 'error'); return; }
+  const nominal = Number(document.getElementById('nominal_du_setting').value) || 0;
+  if (nominal <= 0) { showToast('Masukkan nominal yang valid', 'error'); return; }
+  
+  const existing = getDataByType('settings')[0];
+  const obj = {type: 'settings', nominal_spp: existing?.nominal_spp || 0, nominal_daftar_ulang: nominal};
+  
+  let result;
+  if (existing) {
+    result = await window.dataSdk.update({...existing, ...obj});
+  } else {
+    result = await window.dataSdk.create(obj);
+  }
+  
+  if (result.isOk) {
+    showToast('Nominal Daftar Ulang berhasil disimpan');
+  } else {
+    showToast('Gagal menyimpan nominal', 'error');
+  }
+}
+
+function formatRupiah(num) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+}
+
+// ===== DATA GURU =====
+function renderDataGuru(area) {
+  const guru = getDataByType('guru');
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="flex justify-end">
+        <button onclick="showFormGuru()" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah Guru</button>
+      </div>
+      <div id="formGuruContainer"></div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        ${guru.map(g => `
+          <div class="bg-white rounded-xl border border-gray-100 p-5 card-hover">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="openEditGuruModal('${g.__backendId}')">
+                <div class="w-10 h-10 rounded-full bg-gold-100 flex items-center justify-center"><i data-lucide="graduation-cap" class="w-5 h-5 text-gold-600"></i></div>
+                <div><p class="font-bold text-gray-800 hover:text-primary-600">${g.nama||'-'}</p><p class="text-xs text-gray-500">${g.no_hp||'-'}</p></div>
+              </div>
+              <div class="flex gap-1">
+                <button onclick="openEditGuruModal('${g.__backendId}')" class="p-1.5 rounded hover:bg-blue-50 text-blue-600"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                <button onclick="confirmDeleteGuru('${g.__backendId}')" class="p-1.5 rounded hover:bg-red-50 text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-gray-500"><span class="font-medium">Santri diampu:</span> ${g.santri_diampu||'-'}</div>
+          </div>
+        `).join('') || '<p class="text-center text-gray-400 py-8 text-sm col-span-2">Belum ada data guru</p>'}
+      </div>
+    </div>
+  `;
+}
+
+let editingGuruId = null;
+function showFormGuru(data) {
+  editingGuruId = data ? data.__backendId : null;
+  const c = document.getElementById('formGuruContainer');
+  const santri = getDataByType('santri');
+  const selectedSantris = data?.santri_diampu ? data.santri_diampu.split(',').map(s => s.trim()) : [];
+  
+  c.innerHTML = `
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h3 class="font-bold text-gray-800 mb-4">${data?'Edit':'Tambah'} Guru</h3>
+      <form onsubmit="saveGuru(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="g_nama">Nama</label><input id="g_nama" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.nama||''}" required></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="g_hp">No HP</label><input id="g_hp" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.no_hp||''}"></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="g_alamat">Alamat</label><input id="g_alamat" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.alamat||''}"></div>
+        <div class="lg:col-span-2"><label class="block text-xs font-medium text-gray-600 mb-2" for="g_santri">Santri Diampu</label>
+          <div class="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+            ${santri.length > 0 ? santri.map(s => `
+              <label class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-gray-50">
+                <input type="checkbox" class="santri-checkbox" value="${s.nama}" ${selectedSantris.includes(s.nama) ? 'checked' : ''}>
+                <span class="text-sm">${s.nama} (${s.nomor_induk})</span>
+              </label>
+            `).join('') : '<p class="text-xs text-gray-400 py-2">Belum ada data santri</p>'}
+          </div>
+          <input id="g_santri" type="hidden" value="${data?.santri_diampu||''}">
+        </div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="g_user">Username</label><input id="g_user" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.username||''}"></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="g_pass">Password</label><input id="g_pass" type="password" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${data?.password||''}"></div>
+        <div class="flex items-end gap-2 lg:col-span-1">
+          <button type="submit" id="saveGuruBtn" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium">Simpan</button>
+          <button type="button" onclick="document.getElementById('formGuruContainer').innerHTML=''" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm">Batal</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+async function saveGuru(e) {
+  e.preventDefault();
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai', 'error'); return; }
+  const btn = document.getElementById('saveGuruBtn'); btn.disabled=true; btn.textContent='Menyimpan...';
+  
+  const selectedCheckboxes = document.querySelectorAll('.santri-checkbox:checked');
+  const selectedSantris = Array.from(selectedCheckboxes).map(cb => cb.value).join(', ');
+  
+  const obj = {type:'guru',nama:document.getElementById('g_nama').value,no_hp:document.getElementById('g_hp').value,alamat:document.getElementById('g_alamat').value,santri_diampu:selectedSantris,username:document.getElementById('g_user').value,password:document.getElementById('g_pass').value};
+  let result;
+  if (editingGuruId) { const ex = allData.find(d=>d.__backendId===editingGuruId); result = await window.dataSdk.update({...ex,...obj}); }
+  else result = await window.dataSdk.create(obj);
+  btn.disabled=false; btn.textContent='Simpan';
+  if (result.isOk) { showToast('Data guru disimpan'); document.getElementById('formGuruContainer').innerHTML=''; }
+  else showToast('Gagal menyimpan','error');
+}
+
+function openEditGuruModal(id) {
+  const guru = allData.find(d => d.__backendId === id);
+  if (!guru) return;
+  
+  const modal = document.createElement('div');
+  modal.id = 'editGuruModal';
+  modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 fade-in overflow-y-auto';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  
+  const santri = getDataByType('santri');
+  const selectedSantris = guru.santri_diampu ? guru.santri_diampu.split(',').map(s => s.trim()) : [];
+  
+  const modalContent = document.createElement('div');
+  modalContent.className = 'bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8';
+  
+  modalContent.innerHTML = `
+    <div class="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between rounded-t-2xl z-10">
+      <h2 class="text-lg font-bold text-gray-800">Edit Data Guru</h2>
+      <button onclick="document.getElementById('editGuruModal').remove()" class="p-1 hover:bg-gray-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <form id="editGuruForm" onsubmit="saveEditGuru(event, '${id}')" class="p-6 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="eg_nama">Nama</label><input id="eg_nama" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${guru.nama||''}" required></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="eg_hp">No HP</label><input id="eg_hp" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${guru.no_hp||''}"></div>
+        <div class="sm:col-span-2"><label class="block text-xs font-medium text-gray-600 mb-1" for="eg_alamat">Alamat</label><input id="eg_alamat" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${guru.alamat||''}"></div>
+        <div class="sm:col-span-2"><label class="block text-xs font-medium text-gray-600 mb-2">Santri Diampu</label>
+          <div class="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
+            ${santri.length > 0 ? santri.map(s => `
+              <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white transition">
+                <input type="checkbox" class="guru-santri-checkbox" value="${s.nama}" ${selectedSantris.includes(s.nama) ? 'checked' : ''}>
+                <span class="text-sm text-gray-800">${s.nama} (${s.nomor_induk})</span>
+              </label>
+            `).join('') : '<p class="text-xs text-gray-400 py-2">Belum ada data santri</p>'}
+          </div>
+        </div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="eg_user">Username</label><input id="eg_user" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${guru.username||''}"></div>
+        <div><label class="block text-xs font-medium text-gray-600 mb-1" for="eg_pass">Password</label><input id="eg_pass" type="password" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" value="${guru.password||''}"></div>
+      </div>
+    </form>
+    <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex items-center gap-2 justify-end">
+      <button type="button" onclick="document.getElementById('editGuruModal').remove()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium">Batal</button>
+      <button type="submit" form="editGuruForm" id="modalEditGuruSaveBtn" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium">Simpan Perubahan</button>
+    </div>
+  `;
+  
+  modal.appendChild(modalContent);
+  document.getElementById('app').appendChild(modal);
+  lucide.createIcons();
+}
+
+async function saveEditGuru(e, id) {
+  e.preventDefault();
+  const btn = document.getElementById('modalEditGuruSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  
+  const existing = allData.find(d => d.__backendId === id);
+  if (!existing) return;
+  
+  const selectedCheckboxes = document.querySelectorAll('.guru-santri-checkbox:checked');
+  const selectedSantris = Array.from(selectedCheckboxes).map(cb => cb.value).join(', ');
+  
+  const obj = {
+    type: 'guru',
+    nama: document.getElementById('eg_nama').value,
+    no_hp: document.getElementById('eg_hp').value,
+    alamat: document.getElementById('eg_alamat').value,
+    santri_diampu: selectedSantris,
+    username: document.getElementById('eg_user').value,
+    password: document.getElementById('eg_pass').value
+  };
+  
+  const result = await window.dataSdk.update({ ...existing, ...obj });
+  
+  btn.disabled = false;
+  btn.textContent = 'Simpan Perubahan';
+  
+  if (result.isOk) {
+    showToast('Data guru berhasil diperbarui');
+    document.getElementById('editGuruModal').remove();
+  } else {
+    showToast('Gagal menyimpan data', 'error');
+  }
+}
+
+function confirmDeleteGuru(id) {
+  const row = event.target.closest('[class*="p-5"]');
+  const deleteBtn = event.target.closest('button');
+  const actionDiv = deleteBtn.parentElement;
+  const confirmDiv = document.createElement('div');
+  confirmDiv.className = 'flex gap-1';
+  confirmDiv.innerHTML = `
+    <button type="button" onclick="doDeleteGuru('${id}')" class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition">Hapus?</button>
+    <button type="button" onclick="renderCurrentPage()" class="px-2 py-1 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded text-xs font-medium transition">Batal</button>
+  `;
+  
+  actionDiv.innerHTML = '';
+  actionDiv.appendChild(confirmDiv);
+  lucide.createIcons();
+}
+
+async function doDeleteGuru(id) {
+  const item = allData.find(d => d.__backendId === id);
+  if (!item) return;
+  
+  const result = await window.dataSdk.delete(item);
+  if (result.isOk) {
+    showToast('Data guru berhasil dihapus');
+    renderCurrentPage();
+  } else {
+    showToast('Gagal menghapus data', 'error');
+    renderCurrentPage();
+  }
+}
+
+// ===== GURU: DASHBOARD =====
+function renderGuruDashboard(area) {
+  const guru = allData.find(d => d.type === 'guru' && d.__backendId === currentUserId);
+  const santri = getDataByType('santri');
+  
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
+        <h2 class="text-2xl font-bold">Selamat Datang, ${guru?.nama || 'Guru'}</h2>
+        <p class="text-green-100 mt-1">Dashboard Guru / Musyrifah</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="card-hover bg-white rounded-xl p-5 border border-gray-100">
+          <div class="flex items-center justify-between">
+            <div><p class="text-xs text-gray-500 uppercase font-medium">Santri Diampu</p><p class="text-2xl font-bold text-gray-800 mt-1">${guru?.santri_diampu ? guru.santri_diampu.split(',').length : 0}</p></div>
+            <div class="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center"><i data-lucide="users" class="w-5 h-5 text-primary-500"></i></div>
+          </div>
+        </div>
+        <div class="card-hover bg-white rounded-xl p-5 border border-gray-100">
+          <div class="flex items-center justify-between">
+            <div><p class="text-xs text-gray-500 uppercase font-medium">Total Santri</p><p class="text-2xl font-bold text-gray-800 mt-1">${santri.length}</p></div>
+            <div class="w-10 h-10 rounded-lg bg-gold-50 flex items-center justify-center"><i data-lucide="book" class="w-5 h-5 text-gold-500"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+// ===== GURU: ABSENSI =====
+function renderAbsensi(area) {
+  const santri = getDataByType('santri');
+  const today = new Date().toISOString().split('T')[0];
+
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <select id="absenSantri" class="px-3 py-2 border border-gray-200 rounded-lg text-sm" onchange="loadAbsensiDetail()">
+          <option value="">-- Pilih Santri --</option>
+          ${santri.map(s => `<option value="${s.nomor_induk}">${s.nama}</option>`).join('')}
+        </select>
+        <input id="absenTanggal" type="date" value="${today}" class="px-3 py-2 border border-gray-200 rounded-lg text-sm" onchange="loadAbsensiDetail()">
+      </div>
+      <div id="absensiForm"></div>
+      <div id="riwayatAbsensi"></div>
+    </div>
+  `;
+  loadAbsensiDetail();
+}
+
+function loadAbsensiDetail() {
+  const ni = document.getElementById('absenSantri').value;
+  const tgl = document.getElementById('absenTanggal').value;
+  const formArea = document.getElementById('absensiForm');
+  
+  if (!ni) {
+    formArea.innerHTML = '';
+    document.getElementById('riwayatAbsensi').innerHTML = '';
+    return;
+  }
+  
+  const existing = allData.find(d => d.type === 'absensi' && d.nomor_induk === ni && d.tanggal === tgl);
+  const santriData = getDataByType('santri').find(s => s.nomor_induk === ni);
+  
+  const kegiatan = [
+    { id: 'ziyadah_pagi', label: 'Ziyadah Pagi' },
+    { id: 'takror', label: 'Takror' },
+    { id: 'murojaah', label: 'Muroja\'ah' },
+    { id: 'madin', label: 'Madin' },
+    { id: 'jam_belajar', label: 'Jam Belajar' },
+    { id: 'jamaah_5waktu', label: 'Jama\'ah 5 Waktu' },
+    { id: 'kajian_talim', label: 'Kajian Kitab Ta\'lim' },
+    { id: 'kajian_tafsir', label: 'Kajian Tafsir Jalalain' },
+    { id: 'kegiatan_malam_jumat', label: 'Kegiatan Malam Jum\'at' }
+  ];
+  
+  formArea.innerHTML = `
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div class="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4">
+        <h3 class="font-bold text-white text-lg">Daftar Absensi Kegiatan Santri</h3>
+        <p class="text-green-100 text-xs mt-1">${santriData?.nama || '-'} • ${tgl}</p>
+      </div>
+      
+      <form onsubmit="saveAbsensi(event)" class="p-6">
+        <div class="overflow-x-auto mb-6">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-gray-100 border-b-2 border-gray-300">
+                <th class="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Kegiatan</th>
+                <th class="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">
+                  <div class="flex flex-col items-center gap-1">
+                    <span>Hadir</span>
+                    <i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i>
+                  </div>
+                </th>
+                <th class="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">
+                  <div class="flex flex-col items-center gap-1">
+                    <span>Sakit</span>
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-orange-600"></i>
+                  </div>
+                </th>
+                <th class="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">
+                  <div class="flex flex-col items-center gap-1">
+                    <span>Izin</span>
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-blue-600"></i>
+                  </div>
+                </th>
+                <th class="px-4 py-3 text-center font-bold text-gray-700">
+                  <div class="flex flex-col items-center gap-1">
+                    <span>Alpha</span>
+                    <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              ${kegiatan.map((k, idx) => `
+                <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
+                  <td class="px-4 py-4 font-medium text-gray-800 border-r border-gray-200 bg-gray-50">${k.label}</td>
+                  <td class="px-4 py-4 text-center">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="status_${k.id}" value="hadir" ${existing?.['status_' + k.id] === 'hadir' ? 'checked' : ''} class="w-4 h-4 cursor-pointer">
+                      <span class="inline-block w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center">
+                        <span class="w-2 h-2 rounded-full bg-green-500 ${existing?.['status_' + k.id] === 'hadir' ? 'opacity-100' : 'opacity-0'}"></span>
+                      </span>
+                    </label>
+                  </td>
+                  <td class="px-4 py-4 text-center">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="status_${k.id}" value="sakit" ${existing?.['status_' + k.id] === 'sakit' ? 'checked' : ''} class="w-4 h-4 cursor-pointer">
+                      <span class="inline-block w-5 h-5 rounded-full border-2 border-orange-500 flex items-center justify-center">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 ${existing?.['status_' + k.id] === 'sakit' ? 'opacity-100' : 'opacity-0'}"></span>
+                      </span>
+                    </label>
+                  </td>
+                  <td class="px-4 py-4 text-center">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="status_${k.id}" value="izin" ${existing?.['status_' + k.id] === 'izin' ? 'checked' : ''} class="w-4 h-4 cursor-pointer">
+                      <span class="inline-block w-5 h-5 rounded-full border-2 border-blue-500 flex items-center justify-center">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 ${existing?.['status_' + k.id] === 'izin' ? 'opacity-100' : 'opacity-0'}"></span>
+                      </span>
+                    </label>
+                  </td>
+                  <td class="px-4 py-4 text-center">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="status_${k.id}" value="alpha" ${existing?.['status_' + k.id] === 'alpha' ? 'checked' : ''} class="w-4 h-4 cursor-pointer">
+                      <span class="inline-block w-5 h-5 rounded-full border-2 border-red-500 flex items-center justify-center">
+                        <span class="w-2 h-2 rounded-full bg-red-500 ${existing?.['status_' + k.id] === 'alpha' ? 'opacity-100' : 'opacity-0'}"></span>
+                      </span>
+                    </label>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="border-t pt-4">
+          <label class="block text-xs font-medium text-gray-600 mb-2" for="keterangan_absensi">Keterangan / Catatan (Opsional)</label>
+          <textarea id="keterangan_absensi" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Catatan tambahan jika diperlukan...">${existing?.keterangan_absensi || ''}</textarea>
+        </div>
+
+        <div class="flex gap-2 mt-6">
+          <button type="submit" id="saveAbsenBtn" class="flex-1 px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-bold transition">
+            <i data-lucide="save" class="w-4 h-4 inline mr-2"></i>Simpan Absensi
+          </button>
+          <button type="button" onclick="resetAbsensiForm()" class="px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition">Ulang</button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  const riwayatArea = document.getElementById('riwayatAbsensi');
+  const riwayat = getDataByType('absensi').filter(a => a.nomor_induk === ni).sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal)).slice(0, 10);
+  
+  if (riwayat.length > 0) {
+    riwayatArea.innerHTML = `
+      <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-primary-500/10 to-primary-600/10 px-6 py-3 border-b border-gray-200">
+          <h3 class="font-bold text-gray-800">Riwayat Absensi Kegiatan (10 Terakhir)</h3>
+        </div>
+        <div class="p-6 space-y-3">
+          ${riwayat.map(r => {
+            let hadir = 0, sakit = 0, izin = 0, alpha = 0;
+            kegiatan.forEach(k => {
+              const status = r['status_' + k.id];
+              if (status === 'hadir') hadir++;
+              else if (status === 'sakit') sakit++;
+              else if (status === 'izin') izin++;
+              else if (status === 'alpha') alpha++;
+            });
+            
+            return `
+              <div class="p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <p class="font-bold text-gray-800">${r.tanggal}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">${r.keterangan_absensi || 'Tanpa keterangan'}</p>
+                  </div>
+                  <div class="flex gap-2">
+                    ${hadir > 0 ? `<span class="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">✓ ${hadir}</span>` : ''}
+                    ${sakit > 0 ? `<span class="px-2 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">S ${sakit}</span>` : ''}
+                    ${izin > 0 ? `<span class="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">I ${izin}</span>` : ''}
+                    ${alpha > 0 ? `<span class="px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">✗ ${alpha}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  lucide.createIcons();
+}
+
+function resetAbsensiForm() {
+  const ni = document.getElementById('absenSantri').value;
+  const tgl = document.getElementById('absenTanggal').value;
+  loadAbsensiDetail();
+}
+
+async function saveAbsensi(e) {
+  e.preventDefault();
+  const ni = document.getElementById('absenSantri').value;
+  const tgl = document.getElementById('absenTanggal').value;
+  const keterangan = document.getElementById('keterangan_absensi').value;
+  
+  if (!ni) { showToast('Pilih santri terlebih dahulu','error'); return; }
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai','error'); return; }
+  
+  const kegiatan = [
+    'ziyadah_pagi', 'takror', 'murojaah', 'madin', 'jam_belajar',
+    'jamaah_5waktu', 'kajian_talim', 'kajian_tafsir', 'kegiatan_malam_jumat'
+  ];
+  
+  const obj = {
+    type: 'absensi', 
+    nomor_induk: ni, 
+    tanggal: tgl,
+    keterangan_absensi: keterangan
+  };
+  
+  kegiatan.forEach(k => {
+    const selectedStatus = document.querySelector(`input[name="status_${k}"]:checked`);
+    obj['status_' + k] = selectedStatus ? selectedStatus.value : null;
+  });
+  
+  const kegiatanTerpilih = kegiatan.filter(k => obj['status_' + k] !== null).length;
+  if (kegiatanTerpilih === 0) { 
+    showToast('Pilih status untuk minimal satu kegiatan','error'); 
+    return; 
+  }
+  
+  const btn = document.getElementById('saveAbsenBtn'); 
+  btn.disabled = true; 
+  btn.textContent = 'Menyimpan...';
+  
+  const existing = allData.find(d => d.type === 'absensi' && d.nomor_induk === ni && d.tanggal === tgl);
+  const result = existing ? await window.dataSdk.update({...existing, ...obj}) : await window.dataSdk.create(obj);
+  
+  btn.disabled = false; 
+  btn.textContent = 'Simpan Absensi';
+  
+  if (result.isOk) {
+    showToast('Absensi berhasil disimpan');
+    loadAbsensiDetail();
+  } else {
+    showToast('Gagal menyimpan absensi','error');
+  }
+}
+
+// ===== GURU: HAFALAN =====
+function renderHafalan(area) {
+  const santri = getDataByType('santri');
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-xl border border-gray-100 p-5 h-full">
+            <h3 class="font-bold text-gray-800 mb-4">Pilih Santri</h3>
+            <select id="hafalanSantri" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-3" onchange="loadHafalanDetail()">
+              <option value="">-- Pilih Santri --</option>
+              ${santri.map(s=>`<option value="${s.nomor_induk}">${s.nama}</option>`).join('')}
+            </select>
+            <input id="hafalanTgl" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" onchange="loadHafalanDetail()">
+          </div>
+        </div>
+        <div class="lg:col-span-2" id="hafalanFormArea"></div>
+      </div>
+      <div id="riwayatHafalanArea"></div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function loadHafalanDetail() {
+  const ni = document.getElementById('hafalanSantri').value;
+  const tgl = document.getElementById('hafalanTgl').value;
+  const formArea = document.getElementById('hafalanFormArea');
+  const riwayatArea = document.getElementById('riwayatHafalanArea');
+  
+  if (!ni) {
+    formArea.innerHTML = '';
+    riwayatArea.innerHTML = '';
+    return;
+  }
+  
+  const santriData = getDataByType('santri').find(s => s.nomor_induk === ni);
+  const existing = allData.find(d => d.type === 'hafalan' && d.nomor_induk === ni && d.tanggal === tgl);
+  
+  formArea.innerHTML = `
+    <div class="bg-white rounded-xl border border-gray-100 p-5">
+      <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <i data-lucide="book-open" class="w-4 h-4 text-primary-500"></i>
+        Input Perolehan Hafalan
+      </h3>
+      <p class="text-xs text-gray-500 mb-4">${santriData?.nama || '-'} • ${tgl}</p>
+      <form onsubmit="saveHafalan(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-2" for="hz">Perolehan Hafalan Ziyadah</label>
+          <textarea id="hz" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Contoh: Al-Baqarah ayat 1-5">${existing?.hafalan_ziyadah || ''}</textarea>
+          <p class="text-xs text-gray-400 mt-1">Catatan ayat atau juz yang baru dihafal hari ini</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-2" for="hm">Perolehan Muroja'ah</label>
+          <textarea id="hm" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Contoh: Juz 30 lancar">${existing?.hafalan_murojaah || ''}</textarea>
+          <p class="text-xs text-gray-400 mt-1">Catatan hafalan yang diulang/didingarkan</p>
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" id="saveHafalanBtn" class="flex-1 px-4 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium transition">
+            <i data-lucide="save" class="w-4 h-4 inline mr-2"></i>Simpan Hafalan
+          </button>
+          <button type="button" onclick="document.getElementById('hz').value=''; document.getElementById('hm').value='';" class="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium">Ulang</button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  // Load riwayat hafalan
+  const riwayat = getDataByType('hafalan').filter(h => h.nomor_induk === ni).sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal)).slice(0, 15);
+  
+  if (riwayat.length > 0) {
+    riwayatArea.innerHTML = `
+      <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-primary-500/10 to-primary-600/10 px-6 py-4 border-b border-gray-200">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-primary-500"></i>
+            Riwayat Perolehan Hafalan (15 Terakhir) - ${santriData?.nama || '-'}
+          </h3>
+        </div>
+        <div class="divide-y divide-gray-200">
+          ${riwayat.map((h, idx) => `
+            <div class="p-5 hover:bg-primary-50 transition ${idx === 0 ? 'bg-primary-50' : ''}">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="font-bold text-gray-800">${h.tanggal}</p>
+                </div>
+                <span class="text-xs font-medium px-2.5 py-1 rounded-full ${idx === 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
+                  ${idx === 0 ? '⭐ Hari Ini' : 'Catatan Lama'}
+                </span>
+              </div>
+              
+              ${h.hafalan_ziyadah ? `
+                <div class="mb-3 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500">
+                  <p class="text-xs font-bold text-blue-700 mb-1">📖 Ziyadah (Hafalan Baru)</p>
+                  <p class="text-sm text-gray-800">${h.hafalan_ziyadah}</p>
+                </div>
+              ` : ''}
+              
+              ${h.hafalan_murojaah ? `
+                <div class="p-3 rounded-lg bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-green-500">
+                  <p class="text-xs font-bold text-green-700 mb-1">🔄 Muroja'ah (Pengulangan)</p>
+                  <p class="text-sm text-gray-800">${h.hafalan_murojaah}</p>
+                </div>
+              ` : ''}
+              
+              ${!h.hafalan_ziyadah && !h.hafalan_murojaah ? `
+                <p class="text-sm text-gray-400 italic">Tidak ada catatan untuk hari ini</p>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } else {
+    riwayatArea.innerHTML = `
+      <div class="bg-white rounded-xl border border-gray-100 p-8 text-center">
+        <i data-lucide="inbox" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+        <p class="text-gray-400 text-sm">Belum ada riwayat hafalan untuk santri ini</p>
+      </div>
+    `;
+  }
+  
+  lucide.createIcons();
+}
+
+async function saveHafalan(e) {
+  e.preventDefault();
+  const ni = document.getElementById('hafalanSantri').value;
+  if (!ni) { showToast('Pilih santri','error'); return; }
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai','error'); return; }
+  
+  const tgl = document.getElementById('hafalanTgl').value;
+  const hafalanZ = document.getElementById('hz').value;
+  const hafalanM = document.getElementById('hm').value;
+  
+  if (!hafalanZ && !hafalanM) { showToast('Masukkan minimal satu catatan hafalan','error'); return; }
+  
+  const btn = document.getElementById('saveHafalanBtn'); 
+  btn.disabled = true; 
+  btn.textContent = 'Menyimpan...';
+  
+  const obj = {
+    type: 'hafalan',
+    nomor_induk: ni,
+    tanggal: tgl,
+    hafalan_ziyadah: hafalanZ,
+    hafalan_murojaah: hafalanM
+  };
+  
+  const existing = allData.find(d => d.type === 'hafalan' && d.nomor_induk === ni && d.tanggal === tgl);
+  const result = existing ? await window.dataSdk.update({...existing, ...obj}) : await window.dataSdk.create(obj);
+  
+  btn.disabled = false; 
+  btn.textContent = 'Simpan Hafalan';
+  
+  if (result.isOk) {
+    showToast('Data hafalan berhasil disimpan');
+    loadHafalanDetail();
+  } else {
+    showToast('Gagal menyimpan hafalan','error');
+  }
+}
+
+// ===== GURU: PELANGGARAN =====
+function renderPelanggaran(area) {
+  const santri = getDataByType('santri');
+  const pelData = getDataByType('pelanggaran').sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>
+          Catat Pelanggaran Santri
+        </h3>
+        <form onsubmit="savePelanggaran(event)" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-2" for="pelSantri">Nama Santri</label>
+              <select id="pelSantri" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" required>
+                <option value="">-- Pilih Santri --</option>
+                ${santri.map(s=>`<option value="${s.nomor_induk}">${s.nama}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-2" for="pelTgl">Tanggal Pelanggaran</label>
+              <input id="pelTgl" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" required>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-2" for="pelKat">Kategori Pelanggaran</label>
+            <select id="pelKat" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" required>
+              <option value="">-- Pilih Kategori --</option>
+              <option value="keterlambatan">Keterlambatan</option>
+              <option value="tidak_mengerjakan_tugas">Tidak Mengerjakan Tugas</option>
+              <option value="tidak_disiplin">Ketidakdisiplinan</option>
+              <option value="berkelahi">Berkelahi</option>
+              <option value="bicara_kasar">Bicara Kasar</option>
+              <option value="melanggar_aturan">Melanggar Aturan Pesantren</option>
+              <option value="tidak_hadir_kegiatan">Tidak Hadir Kegiatan</option>
+              <option value="lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-2" for="pelIsi">Deskripsi Pelanggaran</label>
+            <textarea id="pelIsi" rows="4" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Jelaskan detail pelanggaran secara lengkap..." required></textarea>
+          </div>
+          <button type="submit" id="savePelBtn" class="w-full px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition">
+            <i data-lucide="save" class="w-4 h-4"></i> Catat Pelanggaran
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-red-500/10 to-red-600/10 px-6 py-4 border-b border-gray-200">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-red-500"></i>
+            Riwayat Pelanggaran
+          </h3>
+          <p class="text-xs text-gray-500 mt-1">Total: ${pelData.length} catatan pelanggaran</p>
+        </div>
+        <div class="divide-y divide-gray-200">
+          ${pelData.length > 0 ? pelData.map((p, idx) => {
+            const s = getDataByType('santri').find(x=>x.nomor_induk===p.nomor_induk);
+            const categoryColor = {
+              'keterlambatan': 'bg-yellow-50 border-yellow-200',
+              'tidak_mengerjakan_tugas': 'bg-orange-50 border-orange-200',
+              'tidak_disiplin': 'bg-red-50 border-red-200',
+              'berkelahi': 'bg-red-100 border-red-300',
+              'bicara_kasar': 'bg-orange-100 border-orange-300',
+              'melanggar_aturan': 'bg-red-100 border-red-300',
+              'tidak_hadir_kegiatan': 'bg-yellow-100 border-yellow-300',
+              'lainnya': 'bg-gray-50 border-gray-200'
+            };
+            return `
+              <div class="p-5 hover:bg-red-50/30 transition">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <p class="font-bold text-gray-800">${s?.nama||p.nomor_induk}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">${p.tanggal||'-'}</p>
+                  </div>
+                  <span class="px-3 py-1 rounded-full text-xs font-bold text-red-700 bg-red-100">
+                    ${p.kategori_pelanggaran === 'keterlambatan' ? '⏰' : 
+                      p.kategori_pelanggaran === 'tidak_mengerjakan_tugas' ? '📝' :
+                      p.kategori_pelanggaran === 'berkelahi' ? '👊' :
+                      p.kategori_pelanggaran === 'bicara_kasar' ? '🗣️' :
+                      p.kategori_pelanggaran === 'tidak_hadir_kegiatan' ? '❌' : '⚠️'}
+                    ${(p.kategori_pelanggaran || 'lainnya').replace(/_/g, ' ').toUpperCase()}
+                  </span>
+                </div>
+                <p class="text-sm text-gray-700 mb-2">${p.pelanggaran||'-'}</p>
+              </div>
+            `;
+          }).join('') : '<div class="p-8 text-center"><i data-lucide="inbox" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i><p class="text-gray-400 text-sm">Belum ada data pelanggaran</p></div>'}
+        </div>
+      </div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+async function savePelanggaran(e) {
+  e.preventDefault();
+  const ni = document.getElementById('pelSantri').value;
+  if (!ni) { showToast('Pilih santri','error'); return; }
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai','error'); return; }
+  
+  const btn = document.getElementById('savePelBtn'); 
+  btn.disabled = true; 
+  btn.textContent = 'Menyimpan...';
+  
+  const result = await window.dataSdk.create({
+    type: 'pelanggaran',
+    nomor_induk: ni,
+    tanggal: document.getElementById('pelTgl').value,
+    kategori_pelanggaran: document.getElementById('pelKat').value,
+    pelanggaran: document.getElementById('pelIsi').value
+  });
+  
+  btn.disabled = false; 
+  btn.textContent = 'Catat Pelanggaran';
+  
+  if (result.isOk) { 
+    showToast('Pelanggaran berhasil dicatat'); 
+    document.getElementById('pelIsi').value = '';
+    document.getElementById('pelSantri').value = '';
+    document.getElementById('pelKat').value = '';
+    renderPelanggaran(document.getElementById('contentArea'));
+  }
+  else showToast('Gagal menyimpan pelanggaran','error');
+}
+
+// ===== GURU: CATATAN =====
+function renderCatatan(area) {
+  const santri = getDataByType('santri');
+  const catData = getDataByType('catatan').sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <i data-lucide="file-text" class="w-5 h-5 text-blue-500"></i>
+          Tulis Catatan Perkembangan Santri
+        </h3>
+        <form onsubmit="saveCatatan(event)" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-2" for="catSantri">Nama Santri</label>
+              <select id="catSantri" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" required>
+                <option value="">-- Pilih Santri --</option>
+                ${santri.map(s=>`<option value="${s.nomor_induk}">${s.nama}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-2" for="catTgl">Tanggal</label>
+              <input id="catTgl" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" required>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-2" for="catKategori">Kategori Catatan</label>
+            <select id="catKategori" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" required>
+              <option value="">-- Pilih Kategori --</option>
+              <option value="akademik">Akademik / Hafalan</option>
+              <option value="karakter">Karakter & Perilaku</option>
+              <option value="kesehatan">Kesehatan & Fisik</option>
+              <option value="sosial">Sosial & Relasi</option>
+              <option value="prestasi">Prestasi</option>
+              <option value="perkembangan_umum">Perkembangan Umum</option>
+              <option value="saran">Saran & Rekomendasi</option>
+              <option value="lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-2" for="catIsi">Catatan Lengkap</label>
+            <textarea id="catIsi" rows="5" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Tulis catatan perkembangan, karakter, prestasi, atau hal penting lainnya tentang santri..." required></textarea>
+            <p class="text-xs text-gray-400 mt-1">Catatan ini dapat dibaca oleh wali/orang tua santri</p>
+          </div>
+          <button type="submit" id="saveCatBtn" class="w-full px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition">
+            <i data-lucide="save" class="w-4 h-4"></i> Simpan Catatan
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-500/10 to-blue-600/10 px-6 py-4 border-b border-gray-200">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-blue-500"></i>
+            Riwayat Catatan Perkembangan
+          </h3>
+          <p class="text-xs text-gray-500 mt-1">Total: ${catData.length} catatan telah dibuat</p>
+        </div>
+        <div class="divide-y divide-gray-200">
+          ${catData.length > 0 ? catData.map((c, idx) => {
+            const s = getDataByType('santri').find(x=>x.nomor_induk===c.nomor_induk);
+            const categoryIcon = {
+              'akademik': '📚',
+              'karakter': '⭐',
+              'kesehatan': '🏥',
+              'sosial': '👥',
+              'prestasi': '🏆',
+              'perkembangan_umum': '📈',
+              'saran': '💡',
+              'lainnya': '📝'
+            };
+            const categoryColor = {
+              'akademik': 'bg-blue-100 text-blue-700',
+              'karakter': 'bg-purple-100 text-purple-700',
+              'kesehatan': 'bg-green-100 text-green-700',
+              'sosial': 'bg-pink-100 text-pink-700',
+              'prestasi': 'bg-yellow-100 text-yellow-700',
+              'perkembangan_umum': 'bg-indigo-100 text-indigo-700',
+              'saran': 'bg-orange-100 text-orange-700',
+              'lainnya': 'bg-gray-100 text-gray-700'
+            };
+            return `
+              <div class="p-5 hover:bg-blue-50/30 transition">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <p class="font-bold text-gray-800">${s?.nama||c.nomor_induk}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">${c.tanggal||'-'}</p>
+                  </div>
+                  <span class="px-3 py-1 rounded-full text-xs font-bold ${categoryColor[c.kategori_catatan] || categoryColor['lainnya']}">
+                    ${categoryIcon[c.kategori_catatan] || categoryIcon['lainnya']} ${(c.kategori_catatan || 'lainnya').replace(/_/g, ' ').charAt(0).toUpperCase() + (c.kategori_catatan || 'lainnya').replace(/_/g, ' ').slice(1)}
+                  </span>
+                </div>
+                <p class="text-sm text-gray-700 leading-relaxed">${c.catatan||'-'}</p>
+              </div>
+            `;
+          }).join('') : '<div class="p-8 text-center"><i data-lucide="inbox" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i><p class="text-gray-400 text-sm">Belum ada catatan perkembangan santri</p></div>'}
+        </div>
+      </div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+async function saveCatatan(e) {
+  e.preventDefault();
+  const ni = document.getElementById('catSantri').value;
+  if (!ni) { showToast('Pilih santri','error'); return; }
+  if (currentRecordCount >= 999) { showToast('Batas data tercapai','error'); return; }
+  
+  const btn = document.getElementById('saveCatBtn'); 
+  btn.disabled = true; 
+  btn.textContent = 'Menyimpan...';
+  
+  const result = await window.dataSdk.create({
+    type: 'catatan',
+    nomor_induk: ni,
+    tanggal: document.getElementById('catTgl').value,
+    kategori_catatan: document.getElementById('catKategori').value,
+    catatan: document.getElementById('catIsi').value
+  });
+  
+  btn.disabled = false; 
+  btn.textContent = 'Simpan Catatan';
+  
+  if (result.isOk) { 
+    showToast('Catatan perkembangan berhasil disimpan'); 
+    document.getElementById('catIsi').value = '';
+    document.getElementById('catSantri').value = '';
+    document.getElementById('catKategori').value = '';
+    renderCatatan(document.getElementById('contentArea'));
+  }
+  else showToast('Gagal menyimpan catatan','error');
+}
+
+// ===== SANTRI: INFO =====
+function renderInfoSantri(area) {
+  const santri = getDataByType('santri').find(s => s.nomor_induk === currentUserId);
+  if (!santri) return;
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center border-2 border-white"><i data-lucide="user" class="w-8 h-8 text-white"></i></div>
+          <div><h2 class="text-2xl font-bold">${santri.nama||'-'}</h2><p class="text-green-100">${santri.nomor_induk||'-'}</p></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="font-bold text-gray-800 mb-4">Informasi Pribadi</h3>
+          <div class="space-y-3">
+            <div><label class="text-xs font-medium text-gray-500">Kamar</label><p class="text-sm font-medium text-gray-800">${santri.kamar||'-'}</p></div>
+            <div><label class="text-xs font-medium text-gray-500">Kelas</label><p class="text-sm font-medium text-gray-800">${santri.kelas||'-'}</p></div>
+            <div><label class="text-xs font-medium text-gray-500">Alamat</label><p class="text-sm font-medium text-gray-800">${santri.alamat||'-'}</p></div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="font-bold text-gray-800 mb-4">Kontak Orang Tua</h3>
+          <div class="space-y-3">
+            <div><label class="text-xs font-medium text-gray-500">Nama Ibu / Wali</label><p class="text-sm font-medium text-gray-800">${santri.nama_ibu||'-'}</p></div>
+            <div><label class="text-xs font-medium text-gray-500">No. HP</label><p class="text-sm font-medium text-gray-800">${santri.no_hp||'-'}</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function renderInfoBayar(area) {
+  const santri = getDataByType('santri').find(s => s.nomor_induk === currentUserId);
+  const settings = getDataByType('settings')[0] || {};
+  const nominalSPP = settings.nominal_spp || 0;
+  const nominalDU = settings.nominal_daftar_ulang || 0;
+  const totalSPP = getTotalPembayaranSantri(currentUserId);
+  const totalDU = getTotalPembayaranDU(currentUserId);
+  const months = ['Juli','Agustus','September','Oktober','November','Desember','Januari','Februari','Maret','April','Mei','Juni'];
+  
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4 text-primary-500"></i> Status SPP Bulanan</h3>
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2 mb-4">
+            <div class="flex justify-between text-sm"><span>Total Tagihan (12 bulan):</span><span class="font-bold">${formatRupiah(nominalSPP * months.length)}</span></div>
+            <div class="flex justify-between text-sm"><span>Sudah Dibayar:</span><span class="font-bold text-green-600">${formatRupiah(totalSPP)}</span></div>
+            <div class="border-t border-blue-300 pt-2"><div class="flex justify-between text-sm font-bold"><span>Kekurangan:</span><span class="text-red-600">${formatRupiah(Math.max(0, nominalSPP * months.length - totalSPP))}</span></div></div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="clipboard" class="w-4 h-4 text-orange-500"></i> Status Daftar Ulang</h3>
+          <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2 mb-4">
+            <div class="flex justify-between text-sm"><span>Total Tagihan:</span><span class="font-bold">${formatRupiah(nominalDU)}</span></div>
+            <div class="flex justify-between text-sm"><span>Sudah Dibayar:</span><span class="font-bold text-green-600">${formatRupiah(totalDU)}</span></div>
+            <div class="border-t border-orange-300 pt-2"><div class="flex justify-between text-sm font-bold"><span>Kekurangan:</span><span class="text-red-600">${formatRupiah(Math.max(0, nominalDU - totalDU))}</span></div></div>
+          </div>
+          <div class="p-2 rounded-lg ${totalDU >= nominalDU && nominalDU > 0 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} text-xs font-medium text-center">
+            ${totalDU >= nominalDU && nominalDU > 0 ? '✓ LUNAS' : '⏳ BELUM LUNAS'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderInfoAbsen(area) {
+  const absenData = getDataByType('absensi').filter(a => a.nomor_induk === currentUserId).sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal)).slice(0, 7);
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-800 mb-4">Absensi Kegiatan (7 Hari Terakhir)</h3>
+        <div class="space-y-2">${absenData.length > 0 ? absenData.map(a => {
+          let hadir = 0, sakit = 0, izin = 0, alpha = 0;
+          ['ziyadah_pagi','takror','murojaah','madin','jam_belajar','jamaah_5waktu','kajian_talim','kajian_tafsir','kegiatan_malam_jumat'].forEach(k => {
+            if (a['status_' + k] === 'hadir') hadir++;
+            else if (a['status_' + k] === 'sakit') sakit++;
+            else if (a['status_' + k] === 'izin') izin++;
+            else if (a['status_' + k] === 'alpha') alpha++;
+          });
+          return `
+            <div class="p-4 rounded-lg border border-gray-200 hover:bg-primary-50">
+              <div class="flex justify-between items-start mb-2">
+                <p class="font-bold text-gray-800">${a.tanggal}</p>
+                <div class="flex gap-1">
+                  ${hadir > 0 ? `<span class="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-700">✓ ${hadir}</span>` : ''}
+                  ${sakit > 0 ? `<span class="px-2 py-1 rounded text-xs font-bold bg-orange-100 text-orange-700">S ${sakit}</span>` : ''}
+                  ${izin > 0 ? `<span class="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-700">I ${izin}</span>` : ''}
+                  ${alpha > 0 ? `<span class="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-700">✗ ${alpha}</span>` : ''}
+                </div>
+              </div>
+              ${a.keterangan_absensi ? `<p class="text-xs text-gray-600">${a.keterangan_absensi}</p>` : ''}
+            </div>
+          `;
+        }).join('') : '<p class="text-sm text-gray-400 text-center py-4">Belum ada data absensi</p>'}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderInfoHafalan(area) {
+  const hafData = getDataByType('hafalan').filter(h => h.nomor_induk === currentUserId).sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal)).slice(0, 10);
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-800 mb-4">Perkembangan Hafalan</h3>
+        <div class="space-y-3">${hafData.length > 0 ? hafData.map(h => `
+          <div class="p-4 rounded-lg border border-gray-200 hover:bg-primary-50">
+            <p class="text-xs text-gray-500 font-medium mb-2">${h.tanggal}</p>
+            ${h.hafalan_ziyadah ? `<div class="mb-2"><span class="text-xs font-bold text-primary-600">Ziyadah:</span><p class="text-sm text-gray-700 mt-0.5">${h.hafalan_ziyadah}</p></div>` : ''}
+            ${h.hafalan_murojaah ? `<div><span class="text-xs font-bold text-primary-600">Muroja'ah:</span><p class="text-sm text-gray-700 mt-0.5">${h.hafalan_murojaah}</p></div>` : ''}
+          </div>
+        `).join('') : '<p class="text-sm text-gray-400 text-center py-4">Belum ada data hafalan</p>'}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderInfoCatatan(area) {
+  const catData = getDataByType('catatan').filter(c => c.nomor_induk === currentUserId).sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+  
+  const categoryIcon = {
+    'akademik': '📚',
+    'karakter': '⭐',
+    'kesehatan': '🏥',
+    'sosial': '👥',
+    'prestasi': '🏆',
+    'perkembangan_umum': '📈',
+    'saran': '💡',
+    'lainnya': '📝'
+  };
+  const categoryColor = {
+    'akademik': 'bg-blue-100 border-blue-300 text-blue-700',
+    'karakter': 'bg-purple-100 border-purple-300 text-purple-700',
+    'kesehatan': 'bg-green-100 border-green-300 text-green-700',
+    'sosial': 'bg-pink-100 border-pink-300 text-pink-700',
+    'prestasi': 'bg-yellow-100 border-yellow-300 text-yellow-700',
+    'perkembangan_umum': 'bg-indigo-100 border-indigo-300 text-indigo-700',
+    'saran': 'bg-orange-100 border-orange-300 text-orange-700',
+    'lainnya': 'bg-gray-100 border-gray-300 text-gray-700'
+  };
+  
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-500/10 to-blue-600/10 px-6 py-4 border-b border-gray-200">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <i data-lucide="file-text" class="w-5 h-5 text-blue-500"></i>
+            Catatan Perkembangan dari Guru / Musyrifah
+          </h3>
+          <p class="text-xs text-gray-500 mt-1">Perkembangan akademik, karakter, dan prestasi santri</p>
+        </div>
+        <div class="p-6">
+          <div class="space-y-3">
+            ${catData.length > 0 ? catData.map(c => `
+              <div class="p-4 rounded-lg border-2 ${categoryColor[c.kategori_catatan] || categoryColor['lainnya']} hover:shadow-md transition">
+                <div class="flex items-start justify-between mb-2">
+                  <div>
+                    <p class="font-bold text-gray-800">${c.tanggal}</p>
+                    <p class="text-xs font-semibold mt-1">
+                      ${categoryIcon[c.kategori_catatan] || categoryIcon['lainnya']} 
+                      ${(c.kategori_catatan || 'lainnya').replace(/_/g, ' ').charAt(0).toUpperCase() + (c.kategori_catatan || 'lainnya').replace(/_/g, ' ').slice(1)}
+                    </p>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-800 leading-relaxed mt-2">${c.catatan}</p>
+              </div>
+            `).join('') : `
+              <div class="text-center py-8">
+                <i data-lucide="inbox" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+                <p class="text-gray-400 text-sm">Belum ada catatan perkembangan dari guru</p>
+              </div>
+            `}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function renderInfoPelanggaran(area) {
+  const pelData = getDataByType('pelanggaran').filter(p => p.nomor_induk === currentUserId).sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+  
+  const categoryIcon = {
+    'keterlambatan': '⏰',
+    'tidak_mengerjakan_tugas': '📝',
+    'tidak_disiplin': '⚠️',
+    'berkelahi': '👊',
+    'bicara_kasar': '🗣️',
+    'melanggar_aturan': '❌',
+    'tidak_hadir_kegiatan': '🚫',
+    'lainnya': '⚠️'
+  };
+  const categoryColor = {
+    'keterlambatan': 'bg-yellow-100 border-yellow-300 text-yellow-700',
+    'tidak_mengerjakan_tugas': 'bg-orange-100 border-orange-300 text-orange-700',
+    'tidak_disiplin': 'bg-red-100 border-red-300 text-red-700',
+    'berkelahi': 'bg-red-100 border-red-300 text-red-700',
+    'bicara_kasar': 'bg-orange-100 border-orange-300 text-orange-700',
+    'melanggar_aturan': 'bg-red-100 border-red-300 text-red-700',
+    'tidak_hadir_kegiatan': 'bg-yellow-100 border-yellow-300 text-yellow-700',
+    'lainnya': 'bg-gray-100 border-gray-300 text-gray-700'
+  };
+  
+  area.innerHTML = `
+    <div class="fade-in space-y-4">
+      <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-red-500/10 to-red-600/10 px-6 py-4 border-b border-gray-200">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>
+            Riwayat Pelanggaran
+          </h3>
+          <p class="text-xs text-gray-500 mt-1">Catatan pelanggaran yang telah dicatat oleh guru</p>
+        </div>
+        <div class="p-6">
+          <div class="space-y-3">
+            ${pelData.length > 0 ? pelData.map(p => `
+              <div class="p-4 rounded-lg border-2 ${categoryColor[p.kategori_pelanggaran] || categoryColor['lainnya']} hover:shadow-md transition">
+                <div class="flex items-start justify-between mb-2">
+                  <div>
+                    <p class="font-bold text-gray-800">${p.tanggal}</p>
+                    <p class="text-xs font-semibold mt-1">
+                      ${categoryIcon[p.kategori_pelanggaran] || categoryIcon['lainnya']} 
+                      ${(p.kategori_pelanggaran || 'lainnya').replace(/_/g, ' ').charAt(0).toUpperCase() + (p.kategori_pelanggaran || 'lainnya').replace(/_/g, ' ').slice(1)}
+                    </p>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-800 leading-relaxed mt-2">${p.pelanggaran}</p>
+              </div>
+            `).join('') : `
+              <div class="text-center py-8">
+                <i data-lucide="inbox" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+                <p class="text-gray-400 text-sm">Belum ada catatan pelanggaran</p>
+              </div>
+            `}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f48d6721586fce8',t:'MTc3NzU3NjEzNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
